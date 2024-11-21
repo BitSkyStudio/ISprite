@@ -14,7 +14,7 @@ public class AnimationTrack {
         this.rotations = new PropertyTrack<>(MathUtils::lerp);
         this.scales = new PropertyTrack<>(MathUtils::lerp);
     }
-    public Transform getTransformAtTime(Transform baseTransform, float time){
+    public Transform getTransformAtTime(float time){
         return new Transform(translations.getValueAtTime(time), rotations.getValueAtTime(time), scales.getValueAtTime(time));
     }
 

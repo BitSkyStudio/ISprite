@@ -21,10 +21,10 @@ public class Transform {
     public Transform transformChild(Transform child){
         return new Transform(this.translation.cpy().add(child.translation.cpy().rotateRad(this.rotation).scl(this.scale)), this.rotation + child.rotation, this.scale * child.scale);
     }
-    public Transform lerp(Transform other, float t){
-        Vector2 lerpedTranslation = (this.translation!=null&&other.translation!=null)?this.translation.cpy().lerp(other.translation, t):(this.translation!=null?this.translation:other.translation);
-        float lerpedRotation = (this.rotation!=null&&other.rotation!=null)?MathUtils.lerpAngle(this.rotation, other.rotation, t):(this.rotation!=null?this.rotation:other.rotation);
-        float lerpedScale = (this.scale!=null&&other.scale!=null)?MathUtils.lerp(this.scale, other.scale, t):(this.scale!=null?this.scale:other.scale);
+    public Transform lerp(Transform other, float v){
+        Vector2 lerpedTranslation = (this.translation!=null&&other.translation!=null)?this.translation.cpy().lerp(other.translation, v):(this.translation!=null?this.translation:other.translation);
+        float lerpedRotation = (this.rotation!=null&&other.rotation!=null)?MathUtils.lerpAngle(this.rotation, other.rotation, v):(this.rotation!=null?this.rotation:other.rotation);
+        float lerpedScale = (this.scale!=null&&other.scale!=null)?MathUtils.lerp(this.scale, other.scale, v):(this.scale!=null?this.scale:other.scale);
         return new Transform(lerpedTranslation, lerpedRotation, lerpedScale);
     }
     public Transform add(Transform other){
