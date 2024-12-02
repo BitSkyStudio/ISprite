@@ -34,32 +34,38 @@ public class AnimatedSpritePose {
     private void drawDebugBone(AnimatedSprite sprite, AnimatedSpriteBone bone, Transform transform, ShapeRenderer shapeRenderer, UUID highlight){
         Transform animTransform = this.boneTransforms.get(bone.id);
         Transform ownTransform = transform.transformChild(animTransform==null?bone.baseTransform:animTransform.patch(bone.baseTransform));
-        if(bone.id.equals(highlight))
-            shapeRenderer.setColor(Color.GREEN);
+        //if(bone.id.equals(highlight))
+        //    shapeRenderer.setColor(Color.GREEN);
+        shapeRenderer.setColor(Color.YELLOW);
         shapeRenderer.line(transform.translation, ownTransform.translation);
-        Vector2 diff = ownTransform.translation.cpy().sub(transform.translation);
-        float angle = diff.angleRad();
-        float length = diff.len();
-        shapeRenderer.line(ownTransform.translation, ownTransform.translation.cpy().add(new Vector2(length/3f, 0).rotateRad((float) (angle+Math.PI+Math.PI/6))));
-        shapeRenderer.line(ownTransform.translation, ownTransform.translation.cpy().add(new Vector2(length/3f, 0).rotateRad((float) (angle+Math.PI-Math.PI/6))));
-        shapeRenderer.setColor(Color.WHITE);
+        shapeRenderer.setColor(Color.GREEN);
+        drawArrow(shapeRenderer, ownTransform.translation, ownTransform.translation.cpy().add(new Vector2(0, ownTransform.scale*100).rotateRad(ownTransform.rotation)));
+        //shapeRenderer.setColor(Color.WHITE);
         for(UUID childId : bone.children){
             AnimatedSpriteBone child = sprite.bones.get(childId);
             drawDebugBone(sprite, child, ownTransform, shapeRenderer, highlight);
         }
     }
-    public HashMap<UUID,Vector2> getBonePositions(AnimatedSprite sprite, Transform transform){
-        HashMap<UUID,Vector2> positions = new HashMap<>();
-        getBonePositionsRecurse(sprite, positions, sprite.rootBone, transform);
-        return positions;
+    private static void drawArrow(ShapeRenderer shapeRenderer, Vector2 from, Vector2 to){
+        shapeRenderer.line(from, to);
+        Vector2 diff = to.cpy().sub(from);
+        float angle = diff.angleRad();
+        float length = diff.len();
+        shapeRenderer.line(to, to.cpy().add(new Vector2(length/3f, 0).rotateRad((float) (angle+Math.PI+Math.PI/6))));
+        shapeRenderer.line(to, to.cpy().add(new Vector2(length/3f, 0).rotateRad((float) (angle+Math.PI-Math.PI/6))));
     }
-    private void getBonePositionsRecurse(AnimatedSprite sprite, HashMap<UUID,Vector2> positions, AnimatedSpriteBone bone, Transform transform){
+    public HashMap<UUID,Transform> getBoneTransforms(AnimatedSprite sprite, Transform transform){
+        HashMap<UUID,Transform> transforms = new HashMap<>();
+        getBonePositionsRecurse(sprite, transforms, sprite.rootBone, transform);
+        return transforms;
+    }
+    private void getBonePositionsRecurse(AnimatedSprite sprite, HashMap<UUID,Transform> transforms, AnimatedSpriteBone bone, Transform transform){
         Transform animTransform = this.boneTransforms.get(bone.id);
         Transform ownTransform = transform.transformChild(animTransform==null?bone.baseTransform:animTransform.patch(bone.baseTransform));
-        positions.put(bone.id, ownTransform.translation.cpy());
+        transforms.put(bone.id, ownTransform);
         for(UUID childId : bone.children){
             AnimatedSpriteBone child = sprite.bones.get(childId);
-            getBonePositionsRecurse(sprite, positions, child, ownTransform);
+            getBonePositionsRecurse(sprite, transforms, child, ownTransform);
         }
     }
 }

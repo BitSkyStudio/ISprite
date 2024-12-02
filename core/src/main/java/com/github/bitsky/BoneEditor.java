@@ -22,12 +22,12 @@ public class BoneEditor extends Editor {
     public void render() {
         super.render();
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
-        HashMap<UUID, Vector2> positions = EMPTY_POSE.getBonePositions(sprite, new Transform().lock());
+        HashMap<UUID, Transform> transforms = EMPTY_POSE.getBoneTransforms(sprite, new Transform().lock());
         UUID moused = null;
         Vector3 worldMouse3 = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
         Vector2 worldMouse = new Vector2(worldMouse3.x, worldMouse3.y);
-        for(Map.Entry<UUID, Vector2> entry : positions.entrySet()){
-            if(entry.getValue().dst(worldMouse) < 10f){
+        for(Map.Entry<UUID, Transform> entry : transforms.entrySet()){
+            if(entry.getValue().translation.dst(worldMouse) < 10f){
                 moused = entry.getKey();
             }
         }
@@ -38,8 +38,10 @@ public class BoneEditor extends Editor {
 
         if(movingId != null){
             AnimatedSpriteBone movingBone = sprite.bones.get(movingId);
-            if(movingBone != null && movingBone.parent != null)
-                movingBone.baseTransform.translation.set(worldMouse.cpy().sub(positions.get(movingBone.parent)));
+            if(movingBone != null && movingBone.parent != null) {
+                Transform parentTransform = transforms.get(movingBone.parent);
+                movingBone.baseTransform.translation.set(worldMouse.cpy().sub(parentTransform.translation).rotateRad(-parentTransform.rotation));
+            }
         }
 
         if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)){
@@ -57,5 +59,17 @@ public class BoneEditor extends Editor {
                 movingId = sprite.addChildNodeTo(sprite.bones.get(moused)).id;
             }
         }
+    }
+
+    @Override
+    public boolean scrolled(float v, float v1) {
+        if(movingId != null){
+            AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
+            AnimatedSpriteBone movingBone = sprite.bones.get(movingId);
+            if(movingBone != null && movingBone.parent != null) {
+                movingBone.baseTransform.rotation += v1/10f;
+            }
+        }
+        return false;
     }
 }
