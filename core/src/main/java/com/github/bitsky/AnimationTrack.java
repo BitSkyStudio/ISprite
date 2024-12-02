@@ -20,10 +20,10 @@ public class AnimationTrack {
 
     public static class PropertyTrack<T>{
         public final HashMap<Float, T> track;
-        private LerpFunction<T> lerpFunction;
-        public PropertyTrack(LerpFunction<T> lerpFunction) {
+        private EasingFunction<T> easingFunction;
+        public PropertyTrack(EasingFunction<T> easingFunction) {
             this.track = new HashMap<>();
-            this.lerpFunction = lerpFunction;
+            this.easingFunction = easingFunction;
         }
         public void addKeyframe(float time, T value){
             track.put(time, value);
@@ -44,7 +44,7 @@ public class AnimationTrack {
                 Map.Entry<Float, T> entry = list.get(i);
                 if(entry.getKey() >= time){
                     float lerpValue = (time-previousTime)/(entry.getKey()-previousTime);
-                    return lerpFunction.getLerped(previousValue, entry.getValue(), lerpValue);
+                    return easingFunction.getEased(previousValue, entry.getValue(), lerpValue);
                 }
                 previousTime = entry.getKey();
                 previousValue = entry.getValue();
@@ -52,8 +52,8 @@ public class AnimationTrack {
             throw new IllegalStateException("unreachable");
         }
         @FunctionalInterface
-        public interface LerpFunction<T>{
-            T getLerped(T first, T second, float t);
+        public interface EasingFunction<T>{
+            T getEased(T first, T second, float t);
         }
     }
 }
