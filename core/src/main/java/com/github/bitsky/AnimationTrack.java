@@ -25,6 +25,9 @@ public class AnimationTrack {
             this.track = new HashMap<>();
             this.lerpFunction = lerpFunction;
         }
+        public void addKeyframe(float time, T value){
+            track.put(time, value);
+        }
         public T getValueAtTime(float time){
             ArrayList<Map.Entry<Float, T>> list = new ArrayList<>(track.entrySet());
             list.sort(Map.Entry.comparingByKey());

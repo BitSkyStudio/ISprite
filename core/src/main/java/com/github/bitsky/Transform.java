@@ -27,6 +27,9 @@ public class Transform {
         float lerpedScale = (this.scale!=null&&other.scale!=null)?MathUtils.lerp(this.scale, other.scale, v):(this.scale!=null?this.scale:other.scale);
         return new Transform(lerpedTranslation, lerpedRotation, lerpedScale);
     }
+    public Transform patch(Transform other){
+        return new Transform(this.translation==null?other.translation:this.translation, this.rotation==null?other.rotation:this.rotation, this.scale==null?other.scale:this.scale);
+    }
     public Transform add(Transform other){
         Vector2 addedTranslation = (this.translation!=null&&other.translation!=null)?this.translation.cpy().add(other.translation):(this.translation!=null?this.translation:other.translation);
         float addedRotation = (this.rotation!=null&&other.rotation!=null)?this.rotation+other.rotation:(this.rotation!=null?this.rotation:other.rotation);
