@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,11 +15,13 @@ public class AnimationEditor extends Editor {
     private SpriteAnimation animation;
     private UUID movingId;
     private float time;
+    private float animationLength;
     private boolean playing;
     public AnimationEditor() {
         this.movingId = null;
         this.animation = new SpriteAnimation();
         this.time = 0;
+        this.animationLength = 5;
         this.playing = false;
     }
     @Override
@@ -38,12 +41,12 @@ public class AnimationEditor extends Editor {
 
         shapeRenderer.begin();
         UUID finalMoused = moused;
-        pose.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)? Color.RED:Color.YELLOW);
+        pose.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)?Color.RED:Color.GREEN);
         shapeRenderer.end();
 
         if(movingId != null){
             AnimatedSpriteBone movingBone = sprite.bones.get(movingId);
-            if(movingBone != null && movingBone.parent != null) {
+            if(movingBone != null && movingBone.parent != null && (Gdx.input.getDeltaX() != 0 || Gdx.input.getDeltaY() != 0)) {
                 Transform parentTransform = transforms.get(movingBone.parent);
                 AnimationTrack track = animation.getTrack(movingId);
                 track.translations.addKeyframe(time, worldMouse.cpy().sub(parentTransform.translation).rotateRad(-parentTransform.rotation));
@@ -62,6 +65,7 @@ public class AnimationEditor extends Editor {
         }
         if(playing){
             time += Gdx.graphics.getDeltaTime();
+            time %= animationLength;
         }
     }
 
