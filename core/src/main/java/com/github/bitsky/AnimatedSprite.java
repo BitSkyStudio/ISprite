@@ -13,6 +13,7 @@ public class AnimatedSprite {
     public AnimatedSprite() {
         this.bones = new HashMap<>();
         this.rootBone = new AnimatedSpriteBone(this, null);
+        this.rootBone.name = "root";
         this.bones.put(this.rootBone.id, this.rootBone);
     }
     public AnimatedSpriteBone addChildNodeTo(AnimatedSpriteBone parent){

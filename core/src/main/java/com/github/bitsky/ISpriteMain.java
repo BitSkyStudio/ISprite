@@ -3,6 +3,7 @@ package com.github.bitsky;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class ISpriteMain extends ApplicationAdapter {
@@ -10,8 +11,11 @@ public class ISpriteMain extends ApplicationAdapter {
     private SpriteAnimation animation;
     private float time;
     public Editor editor;
+
+    private Skin skin;
     @Override
     public void create() {
+        this.skin = new Skin(Gdx.files.internal("skin/uiskin.json"));
         this.sprite = new AnimatedSprite();
         AnimatedSpriteBone bone2 = this.sprite.addChildNodeTo(this.sprite.rootBone);
         bone2.baseTransform.translation.set(0, 200);
@@ -47,5 +51,8 @@ public class ISpriteMain extends ApplicationAdapter {
 
     public static ISpriteMain getInstance(){
         return (ISpriteMain) Gdx.app.getApplicationListener();
+    }
+    public static Skin getSkin(){
+        return ((ISpriteMain) Gdx.app.getApplicationListener()).skin;
     }
 }

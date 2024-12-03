@@ -16,4 +16,9 @@ public class SpriteAnimation {
         }
         return new AnimatedSpritePose(transforms);
     }
+    public AnimationTrack getTrack(UUID id){
+        if(!boneTracks.containsKey(id))
+            boneTracks.put(id, new AnimationTrack());
+        return boneTracks.get(id);
+    }
 }

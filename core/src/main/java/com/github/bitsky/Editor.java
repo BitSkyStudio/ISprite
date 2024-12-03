@@ -7,13 +7,16 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 
 public abstract class Editor implements InputProcessor {
     protected OrthographicCamera camera;
     protected ShapeRenderer shapeRenderer;
+    protected Stage stage;
     public Editor() {
         this.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         this.shapeRenderer = new ShapeRenderer();
+        this.stage = new Stage();
     }
     public void render(){
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
@@ -22,56 +25,52 @@ public abstract class Editor implements InputProcessor {
         shapeRenderer.setAutoShapeType(true);
         camera.update();
         shapeRenderer.setProjectionMatrix(camera.combined);
+        stage.act();
+        stage.draw();
     }
     public void resize(int width, int height){
         this.camera.setToOrtho(false, width, height);
+        this.stage.getViewport().update(width, height);
     }
     public void dispose(){
         shapeRenderer.dispose();
+        stage.dispose();
     }
 
     @Override
     public boolean keyDown(int i) {
-        return false;
+        return stage.keyDown(i);
     }
-
     @Override
     public boolean keyUp(int i) {
-        return false;
+        return stage.keyUp(i);
     }
-
     @Override
     public boolean keyTyped(char c) {
-        return false;
+        return stage.keyTyped(c);
     }
-
     @Override
     public boolean touchDown(int i, int i1, int i2, int i3) {
-        return false;
+        return stage.touchDown(i, i1, i2, i3);
     }
-
     @Override
     public boolean touchUp(int i, int i1, int i2, int i3) {
-        return false;
+        return stage.touchUp(i, i1, i2, i3);
     }
-
     @Override
     public boolean touchCancelled(int i, int i1, int i2, int i3) {
-        return false;
+        return stage.touchCancelled(i, i1, i2, i3);
     }
-
     @Override
     public boolean touchDragged(int i, int i1, int i2) {
-        return false;
+        return stage.touchDragged(i, i1, i2);
     }
-
     @Override
     public boolean mouseMoved(int i, int i1) {
-        return false;
+        return stage.mouseMoved(i, i1);
     }
-
     @Override
     public boolean scrolled(float v, float v1) {
-        return false;
+        return stage.scrolled(v, v1);
     }
 }

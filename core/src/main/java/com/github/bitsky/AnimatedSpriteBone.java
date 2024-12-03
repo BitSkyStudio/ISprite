@@ -9,6 +9,7 @@ public class AnimatedSpriteBone {
     public final AnimatedSprite sprite;
     public final UUID parent;
     public final UUID id;
+    public String name;
     public final ArrayList<UUID> children;
     public final Transform baseTransform;
     public AnimatedSpriteBone(AnimatedSprite sprite, UUID parent) {
@@ -17,5 +18,6 @@ public class AnimatedSpriteBone {
         this.id = UUID.randomUUID();
         this.children = new ArrayList<>();
         this.baseTransform = new Transform(new Vector2(), 0f, 1f);
+        this.name = "bone";
     }
 }
