@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 public class AnimatedSpritePose {
     public final HashMap<UUID,Transform> boneTransforms;
@@ -28,22 +29,22 @@ public class AnimatedSpritePose {
         }
         return new AnimatedSpritePose(newTransforms);
     }
-    public void drawDebugBones(AnimatedSprite sprite, ShapeRenderer shapeRenderer, UUID highlight){
-        drawDebugBone(sprite, sprite.rootBone, new Transform(new Vector2(), 0f, 1f), shapeRenderer, highlight);
+    public void drawDebugBones(AnimatedSprite sprite, ShapeRenderer shapeRenderer, Function<UUID,Color> highlighter){
+        drawDebugBone(sprite, sprite.rootBone, new Transform(new Vector2(), 0f, 1f), shapeRenderer, highlighter);
     }
-    private void drawDebugBone(AnimatedSprite sprite, AnimatedSpriteBone bone, Transform transform, ShapeRenderer shapeRenderer, UUID highlight){
+    private void drawDebugBone(AnimatedSprite sprite, AnimatedSpriteBone bone, Transform transform, ShapeRenderer shapeRenderer, Function<UUID,Color> highlighter){
         Transform animTransform = this.boneTransforms.get(bone.id);
         Transform ownTransform = transform.transformChild(animTransform==null?bone.baseTransform:animTransform.patch(bone.baseTransform));
         //if(bone.id.equals(highlight))
         //    shapeRenderer.setColor(Color.GREEN);
         shapeRenderer.setColor(Color.YELLOW);
         shapeRenderer.line(transform.translation, ownTransform.translation);
-        shapeRenderer.setColor(Color.GREEN);
+        shapeRenderer.setColor(highlighter.apply(bone.id));
         drawArrow(shapeRenderer, ownTransform.translation, ownTransform.translation.cpy().add(new Vector2(0, ownTransform.scale*100).rotateRad(ownTransform.rotation)));
         //shapeRenderer.setColor(Color.WHITE);
         for(UUID childId : bone.children){
             AnimatedSpriteBone child = sprite.bones.get(childId);
-            drawDebugBone(sprite, child, ownTransform, shapeRenderer, highlight);
+            drawDebugBone(sprite, child, ownTransform, shapeRenderer, highlighter);
         }
     }
     private static void drawArrow(ShapeRenderer shapeRenderer, Vector2 from, Vector2 to){

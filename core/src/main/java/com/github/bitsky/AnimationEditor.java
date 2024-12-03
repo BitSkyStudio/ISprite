@@ -2,6 +2,7 @@ package com.github.bitsky;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
@@ -36,7 +37,8 @@ public class AnimationEditor extends Editor {
         }
 
         shapeRenderer.begin();
-        pose.drawDebugBones(sprite, shapeRenderer, moused);
+        UUID finalMoused = moused;
+        pose.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)? Color.RED:Color.YELLOW);
         shapeRenderer.end();
 
         if(movingId != null){

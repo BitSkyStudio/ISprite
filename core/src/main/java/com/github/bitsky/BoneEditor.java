@@ -3,6 +3,7 @@ package com.github.bitsky;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
@@ -20,6 +21,7 @@ public class BoneEditor extends Editor {
     private static AnimatedSpritePose EMPTY_POSE = new AnimatedSpritePose(new HashMap<>());
     private UUID movingId;
     private Table boneHierarchyTable;
+    private Tree<BoneNode,AnimatedSpriteBone> tree;
     private HashMap<UUID,BoneNode> boneNodes;
     public BoneEditor() {
         this.movingId = null;
@@ -27,13 +29,10 @@ public class BoneEditor extends Editor {
         this.boneHierarchyTable.setFillParent(true);
         this.boneHierarchyTable.right();
         stage.addActor(this.boneHierarchyTable);
-        rebuildHierarchy();
-    }
-    public void rebuildHierarchy(){
         this.boneNodes = new HashMap<>();
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
         this.boneHierarchyTable.clearChildren();
-        Tree<BoneNode, AnimatedSpriteBone> tree = new Tree<>(ISpriteMain.getSkin());
+        this.tree = new Tree<>(ISpriteMain.getSkin());
         BoneNode root = new BoneNode(sprite.rootBone);
         tree.add(root);
         recurseAddHierarchy(root);
@@ -70,7 +69,8 @@ public class BoneEditor extends Editor {
         }
 
         shapeRenderer.begin();
-        EMPTY_POSE.drawDebugBones(sprite, shapeRenderer, moused);
+        UUID finalMoused = moused;
+        EMPTY_POSE.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)? Color.RED:(tree.getSelection().contains(boneNodes.get(uuid))?Color.BLUE:Color.GREEN));
         shapeRenderer.end();
 
         if(movingId != null){
