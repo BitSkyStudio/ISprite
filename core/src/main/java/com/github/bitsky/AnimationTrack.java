@@ -6,9 +6,11 @@ import com.badlogic.gdx.math.Vector2;
 import java.util.*;
 
 public class AnimationTrack {
+
     public PropertyTrack<Vector2> translations;
     public PropertyTrack<Float> rotations;
     public PropertyTrack<Float> scales;
+
     public AnimationTrack() {
         this.translations = new PropertyTrack<>((first, second, t) -> first.cpy().lerp(second, t));
         this.rotations = new PropertyTrack<>(MathUtils::lerp);

@@ -5,9 +5,9 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Widget;
-import com.badlogic.gdx.scenes.scene2d.ui.Window;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.github.bitsky.ui.DedicatedKeyFrameWindow;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +20,9 @@ public class AnimationEditor extends Editor {
     private float time;
     private float animationLength;
     private boolean playing;
+
+    private Window keyFramesWindow;
+
 
     public AnimationEditor() {
         this.movingId = null;
@@ -36,9 +39,12 @@ public class AnimationEditor extends Editor {
      */
     private void createUI() {
         Skin skin = new Skin(Gdx.files.internal("./skin/uiskin.json"));
-        Window keyFramesWindow = new Window("Key Frames", skin);
-        keyFramesWindow.setWidth(this.camera.viewportWidth);
-        keyFramesWindow.setHeight(this.camera.viewportHeight / 8);
+
+        // ** create window **
+        this.keyFramesWindow = new DedicatedKeyFrameWindow("Key Frames", this.animation);
+        keyFramesWindow.setWidth(Gdx.graphics.getWidth());
+        keyFramesWindow.setHeight(this.camera.viewportHeight / 6);
+
         this.stage.addActor(keyFramesWindow);
     }
 

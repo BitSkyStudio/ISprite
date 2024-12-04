@@ -21,7 +21,7 @@ public abstract class Editor implements InputProcessor {
     public Editor() {
         this.camera = new OrthographicCamera(1920, 1080);
         this.shapeRenderer = new ShapeRenderer();
-        // this.stage = new Stage(new ScreenViewport());
+        this.stage = new Stage();
     }
     public void render(){
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
