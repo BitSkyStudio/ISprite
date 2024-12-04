@@ -23,13 +23,24 @@ public class DedicatedKeyFrameWindow extends Window {
         super(title, new Skin(Gdx.files.internal("skin/uiskin.json")));
         this.spriteAnimation = animation;
 
+        this.left();
+
         this.spriteAnimation.boneTracks.values().forEach(animationTrack -> {
-            this.add(new KeyframeRow(animationTrack.rotations));
+            this.add(new KeyframeRow(animationTrack.translations, "Translation"));
+            this.add(new KeyframeRow(animationTrack.scales, "Scale"));
+            this.add(new KeyframeRow(animationTrack.rotations, "Rotation"));
+            this.row();
         });
         this.left();
-        this.add(new KeyframeRow(null));
+
+        AnimationTrack.PropertyTrack<Float> testTrack = new AnimationTrack.PropertyTrack<>((first, second, t) -> second);
+
+        testTrack.addKeyframe(3, 10f);
+        testTrack.addKeyframe(1, 3f);
+        testTrack.addKeyframe(0.5f, 10f);
+
+        this.add(new KeyframeRow(testTrack, "Test Track"));
         this.row();
-        this.add(new KeyframeRow(null));
     }
 
     @Override
@@ -39,22 +50,40 @@ public class DedicatedKeyFrameWindow extends Window {
 
     private class KeyframeRow extends Actor {
 
+        private float timeSubDivision = 64;
+
         private AnimationTrack.PropertyTrack<?> propertyTrack;
         private BitmapFont bitmapFont;
 
         private ShapeRenderer shapeRenderer;
 
-        public KeyframeRow(AnimationTrack.PropertyTrack<?> propertyTrack) {
+        private float x;
+        private float y;
+
+        private String trackName;
+
+        public KeyframeRow(AnimationTrack.PropertyTrack<?> propertyTrack, String trackName) {
             this.propertyTrack = propertyTrack;
             this.shapeRenderer = new ShapeRenderer();
             setWidth(1000);
             setHeight(40);
 
+            this.trackName = trackName;
+
             this.bitmapFont = new BitmapFont();
+        }
+
+        private void drawMarker(ShapeRenderer shapeRenderer, float time) {
+            shapeRenderer.setColor(Color.valueOf("EDDFEF"));
+            shapeRenderer.circle(x + time*timeSubDivision, y + 20, 10);
+
         }
 
         @Override
         public void draw(Batch batch, float parentAlpha) {
+            x = this.getParent().getX() + getX() + 200;
+            y = this.getParent().getY() + getY();
+
             super.draw(batch, parentAlpha);
 
             this.setWidth(this.getParent().getWidth());
@@ -67,22 +96,25 @@ public class DedicatedKeyFrameWindow extends Window {
             shapeRenderer.begin();
             shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
 
-            float x = this.getParent().getX() + getX() + 200;
-            float y = this.getParent().getY() + getY();
-
             shapeRenderer.setColor(Color.valueOf("B7B6C1"));
-            shapeRenderer.rect(x-200, y, 200, getHeight()-5);
+            shapeRenderer.rect(x-200, y, 200, getHeight());
 
-            for (int i = 0; i < getWidth() / 64; i ++) {
+            for (int i = 0; i < getWidth() / timeSubDivision; i ++) {
                 shapeRenderer.setColor(i%2 == 0 ? Color.valueOf("464655") : Color.valueOf("94958B"));
-                shapeRenderer.rect(x + i*64, y, 64, getHeight() - 5);
+                shapeRenderer.rect(x + i*timeSubDivision, y, timeSubDivision, getHeight());
             }
 
-            // shapeRenderer.rect(getX(), getY(), getWidth(), getHeight());
+            if (this.propertyTrack != null) {
+                this.propertyTrack.track.forEach((time, val) -> {
+                    drawMarker(shapeRenderer, time);
+                });
+            }
+
             shapeRenderer.end();
             batch.begin();
 
-            this.bitmapFont.draw(batch, "KeyFrames", x-200, getY() + getHeight() /2f);
+            this.bitmapFont.setColor(Color.valueOf("464655"));
+            this.bitmapFont.draw(batch, this.trackName, x-200, getY() + getHeight() / 2f);
         }
     }
 }
