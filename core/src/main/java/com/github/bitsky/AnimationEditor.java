@@ -5,25 +5,43 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
+import com.badlogic.gdx.scenes.scene2d.ui.Window;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class AnimationEditor extends Editor {
+
     private SpriteAnimation animation;
     private UUID movingId;
     private float time;
     private float animationLength;
     private boolean playing;
+
     public AnimationEditor() {
         this.movingId = null;
         this.animation = new SpriteAnimation();
         this.time = 0;
         this.animationLength = 5;
         this.playing = false;
+
+        this.createUI();
     }
+
+    /**
+     * Creates all ui related elements and listeners
+     */
+    private void createUI() {
+        Skin skin = new Skin(Gdx.files.internal("./skin/uiskin.json"));
+        Window keyFramesWindow = new Window("Key Frames", skin);
+        keyFramesWindow.setWidth(this.camera.viewportWidth);
+        keyFramesWindow.setHeight(this.camera.viewportHeight / 8);
+        this.stage.addActor(keyFramesWindow);
+    }
+
     @Override
     public void render() {
         super.render();
@@ -67,6 +85,13 @@ public class AnimationEditor extends Editor {
             time += Gdx.graphics.getDeltaTime();
             time %= animationLength;
         }
+
+        stage.draw();
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
     }
 
     @Override

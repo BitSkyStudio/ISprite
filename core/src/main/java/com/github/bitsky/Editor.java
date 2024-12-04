@@ -8,15 +8,20 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.viewport.FillViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public abstract class Editor implements InputProcessor {
+
     protected OrthographicCamera camera;
     protected ShapeRenderer shapeRenderer;
     protected Stage stage;
+
     public Editor() {
-        this.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        this.camera = new OrthographicCamera(1920, 1080);
         this.shapeRenderer = new ShapeRenderer();
-        this.stage = new Stage();
+        // this.stage = new Stage(new ScreenViewport());
     }
     public void render(){
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
