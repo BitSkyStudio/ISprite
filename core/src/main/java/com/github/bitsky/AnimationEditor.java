@@ -21,7 +21,7 @@ public class AnimationEditor extends Editor {
     private float animationLength;
     private boolean playing;
 
-    private Window keyFramesWindow;
+    private DedicatedKeyFrameWindow keyFramesWindow;
 
 
     public AnimationEditor() {
@@ -43,7 +43,7 @@ public class AnimationEditor extends Editor {
         // ** create window **
         this.keyFramesWindow = new DedicatedKeyFrameWindow("Key Frames", this.animation);
         keyFramesWindow.setWidth(Gdx.graphics.getWidth());
-        keyFramesWindow.setHeight(this.camera.viewportHeight / 6);
+        keyFramesWindow.setHeight(this.camera.viewportHeight / 5);
 
         this.stage.addActor(keyFramesWindow);
     }
@@ -51,6 +51,7 @@ public class AnimationEditor extends Editor {
     @Override
     public void render() {
         super.render();
+        this.keyFramesWindow.setAnimationStepTime(this.time);
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
         AnimatedSpritePose pose = animation.getPose(time);
         HashMap<UUID, Transform> transforms = pose.getBoneTransforms(sprite, new Transform().lock());
