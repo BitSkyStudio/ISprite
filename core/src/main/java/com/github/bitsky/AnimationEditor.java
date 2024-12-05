@@ -17,9 +17,9 @@ public class AnimationEditor extends Editor {
     private float time;
     private float animationLength;
     private boolean playing;
-    public AnimationEditor() {
+    public AnimationEditor(SpriteAnimation animation) {
         this.movingId = null;
-        this.animation = new SpriteAnimation();
+        this.animation = animation;
         this.time = 0;
         this.animationLength = 5;
         this.playing = false;

@@ -12,6 +12,7 @@ public class ISpriteMain extends ApplicationAdapter {
     private SpriteAnimation animation;
     private float time;
     public Editor editor;
+    public GraphEditor graphEditor;
 
     private Skin skin;
     @Override
@@ -29,6 +30,7 @@ public class ISpriteMain extends ApplicationAdapter {
         this.time = 0;
         this.editor = new BoneEditor();
         Gdx.input.setInputProcessor(this.editor);
+        this.graphEditor = new GraphEditor();
     }
 
     @Override
@@ -39,12 +41,15 @@ public class ISpriteMain extends ApplicationAdapter {
         editor.render();
         if(Gdx.input.isKeyJustPressed(Input.Keys.TAB)){
             if(editor instanceof BoneEditor){
-                editor = new AnimationEditor();
+                setEditor(graphEditor);
             } else {
-                editor = new BoneEditor();
+                setEditor(new BoneEditor());
             }
-            Gdx.input.setInputProcessor(editor);
         }
+    }
+    public void setEditor(Editor editor){
+        this.editor = editor;
+        Gdx.input.setInputProcessor(editor);
     }
 
     @Override
