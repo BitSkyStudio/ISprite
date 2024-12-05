@@ -5,28 +5,53 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.ui.Widget;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.github.bitsky.ui.DedicatedKeyFrameWindow;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class AnimationEditor extends Editor {
+
     private SpriteAnimation animation;
     private UUID movingId;
     private float time;
     private float animationLength;
     private boolean playing;
+
+    private DedicatedKeyFrameWindow keyFramesWindow;
+
+
     public AnimationEditor() {
         this.movingId = null;
         this.animation = new SpriteAnimation();
         this.time = 0;
         this.animationLength = 5;
         this.playing = false;
+
+        this.createUI();
     }
+
+    /**
+     * Creates all ui related elements and listeners
+     */
+    private void createUI() {
+        Skin skin = new Skin(Gdx.files.internal("./skin/uiskin.json"));
+
+        // ** create window **
+        this.keyFramesWindow = new DedicatedKeyFrameWindow("Key Frames", this.animation, this);
+        keyFramesWindow.setWidth(Gdx.graphics.getWidth());
+        keyFramesWindow.setHeight(this.camera.viewportHeight / 5);
+
+        this.stage.addActor(keyFramesWindow);
+    }
+
     @Override
     public void render() {
         super.render();
+        this.keyFramesWindow.setAnimationStepTime(this.time);
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
         AnimatedSpritePose pose = animation.getPose(time);
         HashMap<UUID, Transform> transforms = pose.getBoneTransforms(sprite, new Transform().lock());
@@ -54,10 +79,14 @@ public class AnimationEditor extends Editor {
         }
 
         if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)){
-            if(movingId == null)
+            if(movingId == null) {
                 movingId = moused;
+            }
             else
                 movingId = null;
+
+            if (movingId != null)
+                this.keyFramesWindow.setAnimation(animation, movingId);
         }
 
         if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)){
@@ -67,6 +96,13 @@ public class AnimationEditor extends Editor {
             time += Gdx.graphics.getDeltaTime();
             time %= animationLength;
         }
+
+        stage.draw();
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
     }
 
     @Override
@@ -81,5 +117,9 @@ public class AnimationEditor extends Editor {
             return true;
         }
         return super.scrolled(v, v1);
+    }
+
+    public boolean isPlaying() {
+        return playing;
     }
 }
