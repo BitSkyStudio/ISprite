@@ -81,7 +81,6 @@ public class DedicatedKeyFrameWindow extends Window {
     private class KeyframeMarker {
 
         private KeyframeRow keyframeRow;
-        private boolean mouseHovering;
 
         private float parentX;
         private float parentY;
@@ -112,6 +111,11 @@ public class DedicatedKeyFrameWindow extends Window {
             this.rectangle.set(x, y, width, height);
             return this.rectangle.contains(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
         }
+
+        public void changeTime(float time) {
+            this.keyframeRow.propertyTrack.modifyKeyframe(this.time, time);
+            this.time = time;
+        }
     }
 
     private class KeyframeRow extends Actor {
@@ -120,7 +124,7 @@ public class DedicatedKeyFrameWindow extends Window {
 
         private final AnimationTrack.PropertyTrack<?> propertyTrack;
         private final BitmapFont bitmapFont;
-        private ShapeRenderer shapeRenderer;
+        private final ShapeRenderer shapeRenderer;
 
         private final ArrayList<KeyframeMarker> markers;
 
@@ -128,7 +132,7 @@ public class DedicatedKeyFrameWindow extends Window {
 
         private float x;
         private float y;
-        private String trackName;
+        private final String trackName;
 
         public KeyframeRow(AnimationTrack.PropertyTrack<?> propertyTrack, String trackName) {
             this.propertyTrack = propertyTrack;
@@ -145,17 +149,13 @@ public class DedicatedKeyFrameWindow extends Window {
         }
 
         private void updateMarkers() {
-            this.markers.clear();
+            // this.markers.clear();
 
             this.propertyTrack.track.forEach((time, value) -> {
-                this.markers.add(new KeyframeMarker(KeyframeRow.this, time));
+                if (this.markers.stream().filter(marker -> marker.time == time).findAny().isEmpty())
+                    this.markers.add(new KeyframeMarker(KeyframeRow.this, time));
             });
         }
-/*
-        private void drawMarker(ShapeRenderer shapeRenderer, float time) {
-            shapeRenderer.setColor(Color.valueOf("EDDFEF"));
-            shapeRenderer.circle(x + time * TIME_SUB_DIVISION, y + 20, 10);
-        }*/
 
         @Override
         public Actor hit(float x, float y, boolean touchable) {
@@ -171,11 +171,13 @@ public class DedicatedKeyFrameWindow extends Window {
 
         @Override
         public void draw(Batch batch, float parentAlpha) {
+            this.updateMarkers();
+
             x = this.getParent().getX() + getX() + 200;
             y = this.getParent().getY() + getY();
 
             if (this.mouseDragMarker != null) {
-                this.mouseDragMarker.time = (Gdx.input.getX() - x) / TIME_SUB_DIVISION;
+                this.mouseDragMarker.changeTime((Gdx.input.getX() - x) / TIME_SUB_DIVISION);
 
                 if (!Gdx.input.isButtonPressed(Input.Buttons.LEFT))
                     this.mouseDragMarker = null;
@@ -223,7 +225,7 @@ public class DedicatedKeyFrameWindow extends Window {
             batch.begin();
 
             this.bitmapFont.setColor(Color.valueOf("EAEAEA"));
-            this.bitmapFont.draw(batch, this.trackName, x-200, getY() + getHeight() / 2f);
+            this.bitmapFont.draw(batch, this.trackName, getX(), getY() + getHeight() / 2f);
         }
     }
 }
