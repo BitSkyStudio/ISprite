@@ -52,6 +52,7 @@ public class ISpriteMain extends ApplicationAdapter {
     }
     public void setEditor(Editor editor){
         this.editor = editor;
+        editor.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.input.setInputProcessor(editor);
     }
 

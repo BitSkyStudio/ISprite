@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.github.bitsky.AnimationEditor;
 import com.github.bitsky.AnimationTrack;
+import com.github.bitsky.ISpriteMain;
 import com.github.bitsky.SpriteAnimation;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class DedicatedKeyFrameWindow extends Window {
     private float animationStepTime;
 
     public DedicatedKeyFrameWindow(String title, SpriteAnimation animation, AnimationEditor animationEditor) {
-        super(title, new Skin(Gdx.files.internal("skin/uiskin.json")));
+        super(title, ISpriteMain.getSkin());
         this.spriteAnimation = animation;
 
         this.setResizable(true);
