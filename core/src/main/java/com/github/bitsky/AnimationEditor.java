@@ -41,7 +41,7 @@ public class AnimationEditor extends Editor {
         Skin skin = new Skin(Gdx.files.internal("./skin/uiskin.json"));
 
         // ** create window **
-        this.keyFramesWindow = new DedicatedKeyFrameWindow("Key Frames", this.animation);
+        this.keyFramesWindow = new DedicatedKeyFrameWindow("Key Frames", this.animation, this);
         keyFramesWindow.setWidth(Gdx.graphics.getWidth());
         keyFramesWindow.setHeight(this.camera.viewportHeight / 5);
 
@@ -79,10 +79,14 @@ public class AnimationEditor extends Editor {
         }
 
         if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)){
-            if(movingId == null)
+            if(movingId == null) {
                 movingId = moused;
+            }
             else
                 movingId = null;
+
+            if (movingId != null)
+                this.keyFramesWindow.setAnimation(animation, movingId);
         }
 
         if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)){
@@ -113,5 +117,9 @@ public class AnimationEditor extends Editor {
             return true;
         }
         return super.scrolled(v, v1);
+    }
+
+    public boolean isPlaying() {
+        return playing;
     }
 }

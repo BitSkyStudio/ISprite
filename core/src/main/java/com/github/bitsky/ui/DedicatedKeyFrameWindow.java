@@ -14,10 +14,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
+import com.github.bitsky.AnimationEditor;
 import com.github.bitsky.AnimationTrack;
 import com.github.bitsky.SpriteAnimation;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 import static java.lang.Math.round;
 
@@ -27,31 +29,30 @@ public class DedicatedKeyFrameWindow extends Window {
     private SpriteAnimation spriteAnimation;
     private ArrayList<KeyframeRow> keyframeRows = new ArrayList<>();
 
+    private AnimationEditor animationEditor;
+
     private float animationStepTime;
 
-    public DedicatedKeyFrameWindow(String title, SpriteAnimation animation) {
+    public DedicatedKeyFrameWindow(String title, SpriteAnimation animation, AnimationEditor animationEditor) {
         super(title, new Skin(Gdx.files.internal("skin/uiskin.json")));
         this.spriteAnimation = animation;
 
         this.setResizable(true);
         this.left();
 
+        this.animationEditor = animationEditor;
+/*
         AnimationTrack.PropertyTrack<Float> propertyTrack = new AnimationTrack.PropertyTrack<>((first, second, t) -> second);
         propertyTrack.addKeyframe(0, 3f);
         propertyTrack.addKeyframe(3, 3f);
         propertyTrack.addKeyframe(1f, 0f);
 
-        this.addKeyFrameRow(new KeyframeRow(propertyTrack, "TEST TRACK"));
+        this.addKeyFrameRow(new KeyframeRow(propertyTrack, "TEST TRACK"));*/
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
-            refreshTracks();
-        }
-
     }
 
     private void addKeyFrameRow(KeyframeRow keyframeRow) {
@@ -66,16 +67,26 @@ public class DedicatedKeyFrameWindow extends Window {
         this.keyframeRows.add(keyframeRow);
     }
 
-    private void refreshTracks() {
-        this.spriteAnimation.boneTracks.values().forEach(animationTrack -> {
-            addKeyFrameRow(new KeyframeRow(animationTrack.translations, "Translation"));
-            addKeyFrameRow(new KeyframeRow(animationTrack.scales, "Scale"));
-            addKeyFrameRow(new KeyframeRow(animationTrack.rotations, "Rotation"));
-        });
+    private void refreshTracks(UUID onlyUUID) {
+        AnimationTrack animationTrack = this.spriteAnimation.getTrack(onlyUUID);
+        addKeyFrameRow(new KeyframeRow(animationTrack.translations, "Translation"));
+        addKeyFrameRow(new KeyframeRow(animationTrack.scales, "Scale"));
+        addKeyFrameRow(new KeyframeRow(animationTrack.rotations, "Rotation"));
+    }
+
+    private void clearTracks() {
+        this.keyframeRows.forEach(this::removeActor);
+        this.keyframeRows.clear();
     }
 
     public void setAnimationStepTime(float animationStepTime) {
         this.animationStepTime = animationStepTime;
+    }
+
+    public void setAnimation(SpriteAnimation animation, UUID id) {
+        this.spriteAnimation = animation;
+        this.clearTracks();
+        this.refreshTracks(id);
     }
 
     private class KeyframeMarker {
@@ -113,8 +124,12 @@ public class DedicatedKeyFrameWindow extends Window {
         }
 
         public void changeTime(float time) {
+            if (time < 0)
+                time = 0;
+
             this.keyframeRow.propertyTrack.modifyKeyframe(this.time, time);
             this.time = time;
+            DedicatedKeyFrameWindow.this.getTitleLabel().setText("TIME: (S)" + time);
         }
     }
 
@@ -129,6 +144,8 @@ public class DedicatedKeyFrameWindow extends Window {
         private final ArrayList<KeyframeMarker> markers;
 
         private KeyframeMarker mouseDragMarker;
+
+        private boolean mouseHovering;
 
         private float x;
         private float y;
@@ -165,12 +182,16 @@ public class DedicatedKeyFrameWindow extends Window {
                         this.mouseDragMarker = marker;
                 });
             }
-
+            this.mouseHovering = true;
             return super.hit(x, y, touchable);
         }
 
         @Override
         public void draw(Batch batch, float parentAlpha) {
+            if (DedicatedKeyFrameWindow.this.animationEditor.isPlaying()) {
+                DedicatedKeyFrameWindow.this.getTitleLabel().setText("PLAYBACK " + animationStepTime);
+            }
+
             this.updateMarkers();
 
             x = this.getParent().getX() + getX() + 200;
@@ -201,13 +222,6 @@ public class DedicatedKeyFrameWindow extends Window {
                 shapeRenderer.rect(x + i* TIME_SUB_DIVISION, y, TIME_SUB_DIVISION, getHeight());
             }
 
-            // draw property track markers
-            /*if (this.propertyTrack != null) {
-                this.propertyTrack.track.forEach((time, val) -> {
-                    // drawMarker(shapeRenderer, time);
-                });
-            }*/
-
             this.markers.forEach(marker -> marker.draw(shapeRenderer, x, y));
 
             shapeRenderer.setColor(Color.RED);
@@ -226,6 +240,8 @@ public class DedicatedKeyFrameWindow extends Window {
 
             this.bitmapFont.setColor(Color.valueOf("EAEAEA"));
             this.bitmapFont.draw(batch, this.trackName, getX(), getY() + getHeight() / 2f);
+
+            this.mouseHovering = false;
         }
     }
 }
