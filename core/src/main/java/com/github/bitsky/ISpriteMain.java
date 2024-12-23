@@ -25,8 +25,8 @@ public class ISpriteMain extends ApplicationAdapter {
         bone3.baseTransform.translation.set(200, 0);
         this.animation = new SpriteAnimation();
         this.animation.boneTracks.put(bone2.id, new AnimationTrack());
-        this.animation.boneTracks.get(bone2.id).rotations.addKeyframe(0, 0f);
-        this.animation.boneTracks.get(bone2.id).rotations.addKeyframe(5, (float) (Math.PI/2f));
+        this.animation.boneTracks.get(bone2.id).rotations.addKeyframe(0, 0f, EInterpolationFunction.Linear);
+        this.animation.boneTracks.get(bone2.id).rotations.addKeyframe(5, (float) (Math.PI/2f), EInterpolationFunction.Linear);
         this.time = 0;
         this.editor = new BoneEditor();
         Gdx.input.setInputProcessor(this.editor);

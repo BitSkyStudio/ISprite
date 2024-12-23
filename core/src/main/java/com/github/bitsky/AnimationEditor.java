@@ -73,7 +73,7 @@ public class AnimationEditor extends Editor {
             if(movingBone != null && movingBone.parent != null && (Gdx.input.getDeltaX() != 0 || Gdx.input.getDeltaY() != 0)) {
                 Transform parentTransform = transforms.get(movingBone.parent);
                 AnimationTrack track = animation.getTrack(movingId);
-                track.translations.addKeyframe(time, worldMouse.cpy().sub(parentTransform.translation).rotateRad(-parentTransform.rotation));
+                track.translations.addKeyframe(time, worldMouse.cpy().sub(parentTransform.translation).rotateRad(-parentTransform.rotation), EInterpolationFunction.Linear);
             }
         }
 
@@ -111,7 +111,7 @@ public class AnimationEditor extends Editor {
             AnimatedSpriteBone movingBone = sprite.bones.get(movingId);
             if(movingBone != null && movingBone.parent != null) {
                 AnimationTrack track = animation.getTrack(movingId);
-                track.rotations.addKeyframe(time, animation.getPose(time).getBoneTransforms(sprite, new Transform().lock()).get(movingId).rotation-v1/10f);
+                track.rotations.addKeyframe(time, animation.getPose(time).getBoneTransforms(sprite, new Transform().lock()).get(movingId).rotation-v1/10f, EInterpolationFunction.Linear);
             }
             return true;
         }

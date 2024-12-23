@@ -19,25 +19,32 @@ public class AnimationTrack {
         JSONObject tracks = new JSONObject();
         if(!translations.track.isEmpty()){
             JSONObject translations = new JSONObject();
-            for(Map.Entry<Float, Vector2> entry : this.translations.track.entrySet()){
+            for(Map.Entry<Float, ValueInterpolationPair<Vector2>> entry : this.translations.track.entrySet()){
                 JSONObject translation = new JSONObject();
-                translation.put("x", entry.getValue().x);
-                translation.put("y", entry.getValue().y);
+                translation.put("x", entry.getValue().value.x);
+                translation.put("y", entry.getValue().value.y);
+                translation.put("interpolation", entry.getValue().interpolationFunction.id);
                 translations.put(entry.getKey().toString(), translation);
             }
             tracks.put("translations", translations);
         }
         if(!rotations.track.isEmpty()){
             JSONObject rotations = new JSONObject();
-            for(Map.Entry<Float, Float> entry : this.rotations.track.entrySet()){
-                rotations.put(entry.getKey().toString(), entry.getValue());
+            for(Map.Entry<Float, ValueInterpolationPair<Float>> entry : this.rotations.track.entrySet()){
+                JSONObject rotation = new JSONObject();
+                rotation.put("value", entry.getValue().value);
+                rotation.put("interpolation", entry.getValue().interpolationFunction.id);
+                rotations.put(entry.getKey().toString(), rotation);
             }
             tracks.put("rotations", rotations);
         }
         if(!scales.track.isEmpty()){
             JSONObject scales = new JSONObject();
-            for(Map.Entry<Float, Float> entry : this.scales.track.entrySet()){
-                scales.put(entry.getKey().toString(), entry.getValue());
+            for(Map.Entry<Float, ValueInterpolationPair<Float>> entry : this.scales.track.entrySet()){
+                JSONObject scale = new JSONObject();
+                scale.put("value", entry.getValue().value);
+                scale.put("interpolation", entry.getValue().interpolationFunction.id);
+                scales.put(entry.getKey().toString(), scale);
             }
             tracks.put("scales", scales);
         }
@@ -54,58 +61,68 @@ public class AnimationTrack {
             JSONObject translations = track.getJSONObject("translations");
             for(String time : translations.keySet()){
                 JSONObject translation = translations.getJSONObject(time);
-                this.translations.addKeyframe(Float.parseFloat(time), new Vector2(translation.getFloat("x"), translation.getFloat("y")));
+                this.translations.addKeyframe(Float.parseFloat(time), new Vector2(translation.getFloat("x"), translation.getFloat("y")), EInterpolationFunction.byId((byte) translation.getInt("interpolation")));
             }
         }
         if(track.has("rotations")) {
             JSONObject rotations = track.getJSONObject("rotations");
             for(String time : rotations.keySet()){
-                this.rotations.addKeyframe(Float.parseFloat(time), rotations.getFloat(time));
+                JSONObject rotation = rotations.getJSONObject(time);
+                this.rotations.addKeyframe(Float.parseFloat(time), rotation.getFloat("value"), EInterpolationFunction.byId((byte) rotation.getInt("interpolation")));
             }
         }
         if(track.has("scales")) {
             JSONObject scales = track.getJSONObject("scales");
             for(String time : scales.keySet()){
-                this.scales.addKeyframe(Float.parseFloat(time), scales.getFloat(time));
+                JSONObject scale = scales.getJSONObject(time);
+                this.scales.addKeyframe(Float.parseFloat(time), scale.getFloat("value"), EInterpolationFunction.byId((byte) scale.getInt("interpolation")));
             }
         }
     }
+    public static class ValueInterpolationPair<T>{
+        public T value;
+        public EInterpolationFunction interpolationFunction;
+        public ValueInterpolationPair(T value, EInterpolationFunction interpolationFunction) {
+            this.value = value;
+            this.interpolationFunction = interpolationFunction;
+        }
+    }
     public static class PropertyTrack<T>{
-        public final HashMap<Float, T> track;
+        public final HashMap<Float, ValueInterpolationPair<T>> track;
         private EasingFunction<T> easingFunction;
         public PropertyTrack(EasingFunction<T> easingFunction) {
             this.track = new HashMap<>();
             this.easingFunction = easingFunction;
         }
-        public void addKeyframe(float time, T value){
-            track.put(time, value);
+        public void addKeyframe(float time, T value, EInterpolationFunction interpolationFunction){
+            track.put(time, new ValueInterpolationPair<>(value, interpolationFunction));
         }
         public void modifyKeyframe(float time, float toTime){
-            T v = this.track.get(time);
+            ValueInterpolationPair<T> v = this.track.get(time);
             track.remove(time);
             track.put(toTime, v);
         }
 
         public T getValueAtTime(float time){
-            ArrayList<Map.Entry<Float, T>> list = new ArrayList<>(track.entrySet());
+            ArrayList<Map.Entry<Float, ValueInterpolationPair<T>>> list = new ArrayList<>(track.entrySet());
             list.sort(Map.Entry.comparingByKey());
             if(list.isEmpty())
                 return null;
             if(time <= list.get(0).getKey())
-                return list.get(0).getValue();
+                return list.get(0).getValue().value;
             if(time >= list.get(list.size()-1).getKey())
-                return list.get(list.size()-1).getValue();
+                return list.get(list.size()-1).getValue().value;
 
             float previousTime = list.get(0).getKey();
-            T previousValue = list.get(0).getValue();
+            T previousValue = list.get(0).getValue().value;
             for(int i = 1;i < list.size();i++){
-                Map.Entry<Float, T> entry = list.get(i);
+                Map.Entry<Float, ValueInterpolationPair<T>> entry = list.get(i);
                 if(entry.getKey() >= time){
                     float lerpValue = (time-previousTime)/(entry.getKey()-previousTime);
-                    return easingFunction.getEased(previousValue, entry.getValue(), lerpValue);
+                    return easingFunction.getEased(previousValue, entry.getValue().value, entry.getValue().interpolationFunction.function.apply(lerpValue));
                 }
                 previousTime = entry.getKey();
-                previousValue = entry.getValue();
+                previousValue = entry.getValue().value;
             }
             throw new IllegalStateException("unreachable");
         }
