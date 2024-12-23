@@ -2,6 +2,7 @@ package com.github.bitsky;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import org.json.JSONObject;
 
 public class Transform {
     public Vector2 translation;
@@ -35,5 +36,33 @@ public class Transform {
         float addedRotation = (this.rotation!=null&&other.rotation!=null)?this.rotation+other.rotation:(this.rotation!=null?this.rotation:other.rotation);
         float addedScale = (this.scale!=null&&other.scale!=null)?this.scale+other.scale:(this.scale!=null?this.scale:other.scale);
         return new Transform(addedTranslation, addedRotation, addedScale);
+    }
+
+    public JSONObject save(){
+        JSONObject json = new JSONObject();
+        if(translation != null){
+            JSONObject translation = new JSONObject();
+            translation.put("x", this.translation.x);
+            translation.put("y", this.translation.y);
+            json.put("translation", translation);
+        }
+        if(rotation != null)
+            json.put("rotation", rotation);
+        if(scale != null)
+            json.put("scale", scale);
+        return json;
+    }
+    public void load(JSONObject json){
+        this.translation = null;
+        this.rotation = null;
+        this.scale = null;
+        if(json.has("translation")){
+            JSONObject translation = json.getJSONObject("translation");
+            this.translation = new Vector2(translation.getFloat("x"), translation.getFloat("y"));
+        }
+        if(json.has("rotation"))
+            this.rotation = json.getFloat("rotation");
+        if(json.has("scale"))
+            this.scale = json.getFloat("scale");
     }
 }
