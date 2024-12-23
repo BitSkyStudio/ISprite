@@ -17,9 +17,8 @@ public class AnimationEditor extends Editor {
 
     private SpriteAnimation animation;
     private UUID movingId;
-    private float time;
-    private float animationLength;
-    private boolean playing;
+    public float time;
+    public boolean playing;
 
     private DedicatedKeyFrameWindow keyFramesWindow;
 
@@ -27,7 +26,6 @@ public class AnimationEditor extends Editor {
         this.movingId = null;
         this.animation = animation;
         this.time = 0;
-        this.animationLength = 5;
         this.playing = false;
 
         this.createUI();
@@ -74,6 +72,7 @@ public class AnimationEditor extends Editor {
                 Transform parentTransform = transforms.get(movingBone.parent);
                 AnimationTrack track = animation.getTrack(movingId);
                 track.translations.addKeyframe(time, worldMouse.cpy().sub(parentTransform.translation).rotateRad(-parentTransform.rotation), EInterpolationFunction.Linear);
+                playing = false;
             }
         }
 
@@ -91,9 +90,11 @@ public class AnimationEditor extends Editor {
         if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)){
             playing = !playing;
         }
+        if(animation.getAnimationLength() == 0)
+            playing = false;
         if(playing){
             time += Gdx.graphics.getDeltaTime();
-            time %= animationLength;
+            time %= animation.getAnimationLength();
         }
 
         stage.draw();
@@ -112,6 +113,7 @@ public class AnimationEditor extends Editor {
             if(movingBone != null && movingBone.parent != null) {
                 AnimationTrack track = animation.getTrack(movingId);
                 track.rotations.addKeyframe(time, animation.getPose(time).getBoneTransforms(sprite, new Transform().lock()).get(movingId).rotation-v1/10f, EInterpolationFunction.Linear);
+                playing = false;
             }
             return true;
         }

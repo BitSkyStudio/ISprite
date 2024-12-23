@@ -70,9 +70,10 @@ public class DedicatedKeyFrameWindow extends Window {
 
     private void refreshTracks(UUID onlyUUID) {
         AnimationTrack animationTrack = this.spriteAnimation.getTrack(onlyUUID);
-        addKeyFrameRow(new KeyframeRow(animationTrack.translations, "Translation"));
-        addKeyFrameRow(new KeyframeRow(animationTrack.scales, "Scale"));
-        addKeyFrameRow(new KeyframeRow(animationTrack.rotations, "Rotation"));
+        String boneName = ISpriteMain.getInstance().sprite.bones.get(onlyUUID).name;
+        addKeyFrameRow(new KeyframeRow(animationTrack.translations, "Translation(" + boneName + ")"));
+        addKeyFrameRow(new KeyframeRow(animationTrack.scales, "Scale(" + boneName + ")"));
+        addKeyFrameRow(new KeyframeRow(animationTrack.rotations, "Rotation(" + boneName + ")"));
     }
 
     private void clearTracks() {
@@ -182,6 +183,10 @@ public class DedicatedKeyFrameWindow extends Window {
                     if (marker.mouseColliding())
                         this.mouseDragMarker = marker;
                 });
+                if(this.mouseDragMarker == null){
+                    animationEditor.time = (x - (this.getParent().getX() + getX() + 200)) / TIME_SUB_DIVISION;
+                    animationEditor.playing = false;
+                }
             }
             this.mouseHovering = true;
             return super.hit(x, y, touchable);

@@ -39,4 +39,19 @@ public class SpriteAnimation {
             boneTracks.put(UUID.fromString(entry), animationTrack);
         }
     }
+    public float getAnimationLength(){
+        float maxLength = 0;
+        for(AnimationTrack track : boneTracks.values()){
+            for(float time : track.translations.track.keySet()){
+                maxLength = Math.max(maxLength, time);
+            }
+            for(float time : track.rotations.track.keySet()){
+                maxLength = Math.max(maxLength, time);
+            }
+            for(float time : track.scales.track.keySet()){
+                maxLength = Math.max(maxLength, time);
+            }
+        }
+        return maxLength;
+    }
 }
