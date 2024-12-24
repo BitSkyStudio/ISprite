@@ -8,10 +8,9 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.Tree;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,9 +47,30 @@ public class BoneEditor extends Editor {
             recurseAddHierarchy(childNode);
         }
     }
-    public static class BoneNode extends Tree.Node<BoneNode,AnimatedSpriteBone,Label>{
+    public class BoneNode extends Tree.Node<BoneNode,AnimatedSpriteBone,Label>{
         public BoneNode(AnimatedSpriteBone bone){
             super(new Label(bone.name, ISpriteMain.getSkin()));
+            getActor().addListener(new ClickListener(){
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if(this.getTapCount() == 2){
+                        TextField input = new TextField(bone.name, ISpriteMain.getSkin());
+                        Dialog dialog = new Dialog("Enter new name", ISpriteMain.getSkin(), "dialog") {
+                            public void result(Object obj) {
+                                if (obj instanceof String) {
+                                    bone.name = input.getText();
+                                    getActor().setText(bone.name);
+                                }
+                            }
+                        };
+                        dialog.setMovable(false);
+                        dialog.button("Cancel");
+                        dialog.button("Ok", "");
+                        dialog.getContentTable().add(input);
+                        dialog.show(stage);
+                    }
+                }
+            });
             setValue(bone);
         }
     }
