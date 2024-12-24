@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -14,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -52,16 +54,37 @@ public class GraphEditor extends Editor {
             Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
             addNode(new AnimatedPoseGraphNode(), new Vector2(position.x, position.y));
         }
+        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.setAutoShapeType(true);
+        shapeRenderer.begin();
+        for(GraphNode node : nodes.values()){
+            for(Map.Entry<String, UUID> entry : node.inputs.entrySet()){
+                Actor firstActor = node.inputActors.get(entry.getKey());
+                Actor secondActor = nodes.get(entry.getValue()).outputActor;
+                shapeRenderer.line(firstActor.localToStageCoordinates(new Vector2(firstActor.getWidth()/2, firstActor.getHeight()/2)), secondActor.localToStageCoordinates(new Vector2(secondActor.getWidth()/2, secondActor.getHeight()/2)));
+            }
+        }
+        shapeRenderer.end();
+        shapeRenderer.setProjectionMatrix(camera.combined);
+    }
+    public static class ConnectionData{
+        public final UUID first;
+        public ConnectionData(UUID first) {
+            this.first = first;
+        }
     }
     public abstract class GraphNode{
         public final UUID id;
         public final Window window;
         public final HashMap<String,UUID> inputs;
+        public final HashMap<String,Actor> inputActors;
+        public Actor outputActor;
         public GraphNode(String name) {
             this.id = UUID.randomUUID();
             this.window = new Window(name, ISpriteMain.getSkin());
             this.window.pack();
             this.inputs = new HashMap<>();
+            this.inputActors = new HashMap<>();
             if(hasOutput()){
                 HorizontalGroup hgroup = new HorizontalGroup();
                 hgroup.addActor(new Label("output", ISpriteMain.getSkin()));
@@ -70,10 +93,23 @@ public class GraphEditor extends Editor {
                 dragAndDrop.addSource(new DragAndDrop.Source(dragOutput) {
                     @Override
                     public DragAndDrop.Payload dragStart(InputEvent inputEvent, float v, float v1, int i) {
-                        return new DragAndDrop.Payload();
+                        dragOutput.setVisible(false);
+                        DragAndDrop.Payload payload = new DragAndDrop.Payload();
+                        Image connection = new Image(linkOutputTexture);
+                        payload.setDragActor(connection);
+                        payload.setObject(new ConnectionData(id));
+                        dragAndDrop.setDragActorPosition(dragOutput.getWidth(), -dragOutput.getHeight() / 2);
+                        return payload;
+                    }
+
+                    @Override
+                    public void dragStop(InputEvent event, float x, float y, int pointer, DragAndDrop.Payload payload, DragAndDrop.Target target) {
+                        dragOutput.setVisible(true);
+                        super.dragStop(event, x, y, pointer, payload, target);
                     }
                 });
                 window.add(hgroup);
+                outputActor = dragOutput;
             }
         }
         public void addInput(String name){
@@ -84,14 +120,16 @@ public class GraphEditor extends Editor {
             dragAndDrop.addTarget(new DragAndDrop.Target(dragInput) {
                 @Override
                 public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
-                    return false;
+                    return payload.getObject() instanceof ConnectionData;
                 }
                 @Override
                 public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
-
+                    ConnectionData output = (ConnectionData) payload.getObject();
+                    inputs.put(name, output.first);
                 }
             });
             window.add(hgroup);
+            this.inputActors.put(name, dragInput);
         }
         public abstract AnimatedSpritePose getOutputPose();
         public boolean hasOutput(){
