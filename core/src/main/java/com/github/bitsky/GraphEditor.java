@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 public class GraphEditor extends Editor {
     private final Texture linkInputTexture;
@@ -28,6 +29,8 @@ public class GraphEditor extends Editor {
     private HashMap<UUID, GraphNode> nodes;
     private DragAndDrop dragAndDrop;
     private float time;
+    private Table rightClickMenu;
+    private HashMap<String, Supplier<GraphNode>> nodeTypes;
     public GraphEditor() {
         this.linkInputTexture = new Texture("link_input.png");
         this.linkInputFilledTexture = new Texture("link_input_filled.png");
@@ -37,6 +40,11 @@ public class GraphEditor extends Editor {
         this.nodes = new HashMap<>();
 
         addNode(new FinalPoseGraphNode(), Vector2.Zero);
+
+        rightClickMenu = null;
+
+        nodeTypes = new HashMap<>();
+        nodeTypes.put("Animated Pose", AnimatedPoseGraphNode::new);
     }
     public void addNode(GraphNode node, Vector2 position){
         this.nodes.put(node.id, node);
@@ -50,9 +58,35 @@ public class GraphEditor extends Editor {
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
             stage.getCamera().position.add(-Gdx.input.getDeltaX()*2f, Gdx.input.getDeltaY()*2f, 0);
         }
-        if(Gdx.input.isKeyJustPressed(Input.Keys.P)){
+        if(Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)){
+            if(rightClickMenu != null)
+                rightClickMenu.remove();
+
+            this.rightClickMenu = new Table();
+            stage.addActor(rightClickMenu);
             Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
-            addNode(new AnimatedPoseGraphNode(), new Vector2(position.x, position.y));
+            rightClickMenu.setPosition(position.x, position.y);
+            for(Map.Entry<String, Supplier<GraphNode>> entry : nodeTypes.entrySet()){
+                TextButton button = new TextButton(entry.getKey(), ISpriteMain.getSkin());
+                button.addListener(new ClickListener(){
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+                        addNode(entry.getValue().get(), new Vector2(position.x, position.y));
+                        if(rightClickMenu != null) {
+                            rightClickMenu.remove();
+                            rightClickMenu = null;
+                        }
+                    }
+                });
+                rightClickMenu.add(button);
+            }
+        }
+        if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)){
+            if(rightClickMenu != null) {
+                rightClickMenu.remove();
+                rightClickMenu = null;
+            }
         }
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.setAutoShapeType(true);
