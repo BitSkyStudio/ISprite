@@ -128,7 +128,8 @@ public class DedicatedKeyFrameWindow extends Window {
         public void changeTime(float time) {
             if (time < 0)
                 time = 0;
-
+            if(this.keyframeRow.propertyTrack.track.containsKey(time))
+                return;
             this.keyframeRow.propertyTrack.modifyKeyframe(this.time, time);
             this.time = time;
             DedicatedKeyFrameWindow.this.getTitleLabel().setText("TIME: (S)" + time);
@@ -206,8 +207,18 @@ public class DedicatedKeyFrameWindow extends Window {
             if (this.mouseDragMarker != null) {
                 this.mouseDragMarker.changeTime((Gdx.input.getX() - x) / TIME_SUB_DIVISION);
 
-                if (!Gdx.input.isButtonPressed(Input.Buttons.LEFT))
+                if(Gdx.input.isKeyJustPressed(Input.Keys.FORWARD_DEL)){
+                    this.mouseDragMarker.keyframeRow.propertyTrack.track.remove(this.mouseDragMarker.time);
                     this.mouseDragMarker = null;
+                }
+                /*if(Gdx.input.isKeyJustPressed(Input.Keys.C)){
+                    AnimationTrack.ValueInterpolationPair pair = this.mouseDragMarker.keyframeRow.propertyTrack.track.get(this.mouseDragMarker.time);
+                    this.mouseDragMarker.keyframeRow.propertyTrack.addKeyframe(this.mouseDragMarker.time, (Object) pair.value, pair.interpolationFunction);
+                    this.mouseDragMarker.changeTime(1000);
+                }*/
+                if (!Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+                    this.mouseDragMarker = null;
+                }
             }
 
             super.draw(batch, parentAlpha);
