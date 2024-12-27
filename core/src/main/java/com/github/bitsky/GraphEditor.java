@@ -2,9 +2,7 @@ package com.github.bitsky;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -13,9 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -45,6 +41,9 @@ public class GraphEditor extends Editor {
 
         nodeTypes = new HashMap<>();
         nodeTypes.put("Animated Pose", AnimatedPoseGraphNode::new);
+        nodeTypes.put("Blend Pose", BlendPoseGraphNode::new);
+        nodeTypes.put("Multiply Pose", MultiplyPoseGraphNode::new);
+        nodeTypes.put("Add Pose", AddPoseGraphNode::new);
     }
     public void addNode(GraphNode node, Vector2 position){
         this.nodes.put(node.id, node);
@@ -79,10 +78,10 @@ public class GraphEditor extends Editor {
                         }
                     }
                 });
-                rightClickMenu.add(button);
+                rightClickMenu.add(button).row();
             }
         }
-        if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)){
+        if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) || Gdx.input.isButtonJustPressed(Input.Buttons.MIDDLE)){
             if(rightClickMenu != null) {
                 rightClickMenu.remove();
                 rightClickMenu = null;
@@ -142,7 +141,7 @@ public class GraphEditor extends Editor {
                         super.dragStop(event, x, y, pointer, payload, target);
                     }
                 });
-                window.add(hgroup);
+                window.add(hgroup).row();
                 outputActor = dragOutput;
             }
         }
@@ -162,7 +161,7 @@ public class GraphEditor extends Editor {
                     inputs.put(name, output.first);
                 }
             });
-            window.add(hgroup);
+            window.add(hgroup).row();
             this.inputActors.put(name, dragInput);
         }
         public abstract AnimatedSpritePose getOutputPose();
@@ -204,6 +203,64 @@ public class GraphEditor extends Editor {
         @Override
         public AnimatedSpritePose getOutputPose() {
             return animation.getPose(time);
+        }
+    }
+    public class BlendPoseGraphNode extends GraphNode{
+        public float blendValue;
+        public BlendPoseGraphNode() {
+            super("Blend Pose");
+            addInput("first");
+            addInput("second");
+            this.blendValue = 0.5f;
+            this.window.add(new Label("Blend: ", ISpriteMain.getSkin()));
+            TextField textField = new TextField(""+blendValue, ISpriteMain.getSkin());
+            textField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            textField.setTextFieldListener((textField1, c) -> {
+                try {
+                    blendValue = Float.parseFloat(textField1.getText());
+                } catch(NumberFormatException e){
+                    textField.setText(""+blendValue);
+                }
+            });
+            this.window.add(textField);
+        }
+        @Override
+        public AnimatedSpritePose getOutputPose() {
+            return getInput("first").lerp(getInput("second"), blendValue);
+        }
+    }
+    public class MultiplyPoseGraphNode extends GraphNode{
+        public float multiplyValue;
+        public MultiplyPoseGraphNode() {
+            super("Multiply Pose");
+            addInput("first");
+            this.multiplyValue = 1f;
+            this.window.add(new Label("Multiply: ", ISpriteMain.getSkin()));
+            TextField textField = new TextField(""+multiplyValue, ISpriteMain.getSkin());
+            textField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            textField.setTextFieldListener((textField1, c) -> {
+                try {
+                    multiplyValue = Float.parseFloat(textField1.getText());
+                } catch(NumberFormatException e){
+                    textField.setText(""+multiplyValue);
+                }
+            });
+            this.window.add(textField);
+        }
+        @Override
+        public AnimatedSpritePose getOutputPose() {
+            return getInput("first").multiply(multiplyValue);
+        }
+    }
+    public class AddPoseGraphNode extends GraphNode{
+        public AddPoseGraphNode() {
+            super("Add Pose");
+            addInput("first");
+            addInput("second");
+        }
+        @Override
+        public AnimatedSpritePose getOutputPose() {
+            return getInput("first").add(getInput("second"));
         }
     }
 }
