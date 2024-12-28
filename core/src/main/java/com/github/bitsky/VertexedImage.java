@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ShortArray;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class VertexedImage {
     public final Texture texture;
@@ -26,7 +27,7 @@ public class VertexedImage {
             vertices[(i*2)+1] = points.get(i).y;
         }
         ShortArray indices = new DelaunayTriangulator().computeTriangles(vertices, true);
-        PolygonRegion polygonRegion = new PolygonRegion(new TextureRegion(texture), vertices, indices.items);
+        PolygonRegion polygonRegion = new PolygonRegion(new TextureRegion(texture), vertices, indices.shrink());
         polygonSpriteBatch.draw(polygonRegion, x, y);
     }
     public void debugDraw(ShapeRenderer shapeRenderer, float x, float y){
