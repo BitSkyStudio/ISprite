@@ -1,5 +1,6 @@
 package com.github.bitsky;
 
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import org.json.JSONObject;
@@ -12,11 +13,13 @@ import java.util.UUID;
 public class AnimatedSprite {
     public final HashMap<UUID, AnimatedSpriteBone> bones;
     public AnimatedSpriteBone rootBone;
+    public VertexedImage image;
     public AnimatedSprite() {
         this.bones = new HashMap<>();
         this.rootBone = new AnimatedSpriteBone(this, null);
         this.rootBone.name = "root";
         this.bones.put(this.rootBone.id, this.rootBone);
+        this.image = new VertexedImage(new Texture("testimg.png"));
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();

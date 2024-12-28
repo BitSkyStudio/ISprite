@@ -78,6 +78,11 @@ public class BoneEditor extends Editor {
     public void render() {
         super.render();
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
+
+        polygonSpriteBatch.begin();
+        sprite.image.draw(polygonSpriteBatch, 0, 0);
+        polygonSpriteBatch.end();
+
         HashMap<UUID, Transform> transforms = EMPTY_POSE.getBoneTransforms(sprite, new Transform().lock());
         UUID moused = null;
         Vector3 worldMouse3 = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
@@ -91,7 +96,12 @@ public class BoneEditor extends Editor {
         shapeRenderer.begin();
         UUID finalMoused = moused;
         EMPTY_POSE.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)? Color.RED:(tree.getSelection().contains(boneNodes.get(uuid))?Color.BLUE:Color.GREEN));
+        sprite.image.debugDraw(shapeRenderer, 0, 0);
         shapeRenderer.end();
+
+        if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
+            sprite.image.points.add(worldMouse.cpy());
+        }
 
         if(movingId != null){
             AnimatedSpriteBone movingBone = sprite.bones.get(movingId);
