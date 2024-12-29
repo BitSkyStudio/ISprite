@@ -182,13 +182,17 @@ public class GraphEditor extends Editor {
          */
         public void disconnectAll(GraphNode graphNode) {
 
+            List<String> toRemove = new ArrayList<>();
+
             for (String key : this.inputs.keySet()) {
                 UUID val = this.inputs.get(key);
                 if (val.equals(graphNode.id)) {
-                    this.inputs.remove(key, val);
                     this.inputRegions.get(key).setTexture(linkInputTexture);
+                    toRemove.add(key);
                 }
             }
+            
+            toRemove.forEach(this.inputs::remove);
         }
 
         public void addInput(String name){
