@@ -209,6 +209,7 @@ public class DedicatedKeyFrameWindow extends Window {
 
                 if(Gdx.input.isKeyJustPressed(Input.Keys.FORWARD_DEL)){
                     this.mouseDragMarker.keyframeRow.propertyTrack.track.remove(this.mouseDragMarker.time);
+                    this.mouseDragMarker.keyframeRow.markers.remove(mouseDragMarker);
                     this.mouseDragMarker = null;
                 }
                 /*if(Gdx.input.isKeyJustPressed(Input.Keys.C)){

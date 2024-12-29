@@ -99,6 +99,8 @@ public class AnimationTrack {
         }
         public void modifyKeyframe(float time, float toTime){
             ValueInterpolationPair<T> v = this.track.get(time);
+            if(v == null)
+                return;
             track.remove(time);
             track.put(toTime, v);
         }
