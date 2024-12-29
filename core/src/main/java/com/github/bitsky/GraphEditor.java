@@ -32,8 +32,6 @@ public class GraphEditor extends Editor {
     private DragAndDrop dragAndDrop;
     private float time;
 
-    private boolean isDragging;
-    private Vector2 startDragLocation;
 
     private final ToolPanelWindow toolPanelWindow;
 
@@ -74,6 +72,9 @@ public class GraphEditor extends Editor {
 
     public void removeNode(GraphNode node) {
         node.window.remove();
+
+        this.connectionRecords.removeIf(connectionRecord -> connectionRecord.uuid1.equals(node.id) || connectionRecord.uuid2.equals(node.id));
+
         this.nodes.remove(node.id, node);
         this.nodes.forEach((nodeKey, nodeValue) -> nodeValue.disconnectAll(node));
     }
@@ -90,12 +91,14 @@ public class GraphEditor extends Editor {
         this.shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
 
         for (ConnectionRecord connectionRecord : connectionRecords) {
+            this.shapeRenderer.setColor(Color.valueOf("DA863E"));
+            this.shapeRenderer.circle(connectionRecord.getWindow1().getX() + connectionRecord.getWindow1().getWidth(), connectionRecord.getWindow1().getY() + connectionRecord.getActor1().getParent().getY() + 16, 10);
             this.shapeRenderer.rectLine(
-                connectionRecord.actor1.getOriginX(),
-                connectionRecord.actor1.getOriginY(),
-                connectionRecord.actor2.getOriginX(),
-                connectionRecord.actor2.getOriginY(),
-                10);
+                connectionRecord.getWindow1().getX() + connectionRecord.getWindow1().getWidth(),
+                connectionRecord.getWindow1().getY() + connectionRecord.getActor1().getParent().getY() + 16,
+                connectionRecord.getWindow2().getX() + 12,
+                connectionRecord.getWindow2().getY() + connectionRecord.getActor2().getParent().getY() + 16,
+                10, Color.valueOf("DA863E"), Color.valueOf("A4DDDB"));
         }
 
             /*
@@ -158,15 +161,13 @@ public class GraphEditor extends Editor {
                 dragAndDrop.addSource(new DragAndDrop.Source(dragOutput) {
                     @Override
                     public DragAndDrop.Payload dragStart(InputEvent inputEvent, float v, float v1, int i) {
-                        startDragLocation = new Vector2(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
                         final DragAndDrop.Payload payload = new DragAndDrop.Payload();
-                        payload.setObject(new ConnectionPayload(id, dragOutput));
+                        payload.setObject(new ConnectionPayload(id, dragOutput, window));
                         return payload;
                     }
 
                     @Override
                     public void dragStop(InputEvent event, float x, float y, int pointer, DragAndDrop.Payload payload, DragAndDrop.Target target) {
-                        startDragLocation = null;
                         super.dragStop(event, x, y, pointer, payload, target);
                     }
                 });
@@ -191,7 +192,7 @@ public class GraphEditor extends Editor {
                     toRemove.add(key);
                 }
             }
-            
+
             toRemove.forEach(this.inputs::remove);
         }
 
@@ -216,9 +217,9 @@ public class GraphEditor extends Editor {
                     inputRegion.setTexture(linkInputFilledTexture);
 
                     ConnectionPayload payload1 = ((ConnectionPayload) payload.getObject());
-                    inputs.put(name, payload1.uuid);
+                    inputs.put(name, payload1.getUuid());
 
-                    ConnectionRecord connectionRecord = new ConnectionRecord(payload1.actor, dragInput);
+                    ConnectionRecord connectionRecord = new ConnectionRecord(payload1.getActor(), dragInput, payload1.getWindow(), window, payload1.getUuid(), id);
                     connectionRecords.add(connectionRecord);
                 }
             });
@@ -233,7 +234,7 @@ public class GraphEditor extends Editor {
         }
     }
 
-    private class ToolPanelWindow extends Window {
+    private static class ToolPanelWindow extends Window {
 
         public final Button buttonAddPose;
         public final Button buttonAddAND;
@@ -319,10 +320,12 @@ public class GraphEditor extends Editor {
     private class ConnectionPayload {
         private final UUID uuid;
         private final Actor actor;
+        private final Window window;
 
-        public ConnectionPayload(UUID uuid, Actor actor) {
+        public ConnectionPayload(UUID uuid, Actor actor, Window window) {
             this.uuid = uuid;
             this.actor = actor;
+            this.window = window;
         }
 
         public UUID getUuid() {
@@ -332,15 +335,29 @@ public class GraphEditor extends Editor {
         public Actor getActor() {
             return actor;
         }
+
+        public Window getWindow() {
+            return window;
+        }
     }
 
     private class ConnectionRecord {
         private final Actor actor1;
         private final Actor actor2;
 
-        public ConnectionRecord(Actor actor1, Actor actor2) {
+        private final Window window1;
+        private final Window window2;
+
+        private final UUID uuid1;
+        private final UUID uuid2;
+
+        public ConnectionRecord(Actor actor1, Actor actor2, Window window1, Window window2, UUID uid1, UUID uid2) {
             this.actor1 = actor1;
             this.actor2 = actor2;
+            this.window1 = window1;
+            this.window2 = window2;
+            this.uuid1 = uid1;
+            this.uuid2 = uid2;
         }
 
         public Actor getActor1() {
@@ -349,6 +366,14 @@ public class GraphEditor extends Editor {
 
         public Actor getActor2() {
             return actor2;
+        }
+
+        public Window getWindow1() {
+            return window1;
+        }
+
+        public Window getWindow2() {
+            return window2;
         }
     };
 }
