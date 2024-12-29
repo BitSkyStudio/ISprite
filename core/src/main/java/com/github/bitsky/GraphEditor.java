@@ -2,8 +2,10 @@ package com.github.bitsky;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -12,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -45,12 +48,21 @@ public class GraphEditor extends Editor {
         nodeTypes.put("Multiply Pose", MultiplyPoseGraphNode::new);
         nodeTypes.put("Add Pose", AddPoseGraphNode::new);
     }
+
+    public void removeNode(GraphNode node) {
+        node.window.remove();
+
+        this.nodes.remove(node.id, node);
+        this.nodes.forEach((nodeKey, nodeValue) -> nodeValue.disconnectAll(node));
+    }
+
     public void addNode(GraphNode node, Vector2 position){
         this.nodes.put(node.id, node);
         this.stage.addActor(node.window);
         node.window.pack();
         node.window.setPosition(position.x, position.y);
     }
+
     @Override
     public void render() {
         super.render();
@@ -81,44 +93,81 @@ public class GraphEditor extends Editor {
                 rightClickMenu.add(button).row();
             }
         }
+
         if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) || Gdx.input.isButtonJustPressed(Input.Buttons.MIDDLE)){
             if(rightClickMenu != null) {
                 rightClickMenu.remove();
                 rightClickMenu = null;
             }
         }
+
         shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
         shapeRenderer.setAutoShapeType(true);
         shapeRenderer.begin();
+        shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
         for(GraphNode node : nodes.values()){
             for(Map.Entry<String, UUID> entry : node.inputs.entrySet()){
                 Actor firstActor = node.inputActors.get(entry.getKey());
                 Actor secondActor = nodes.get(entry.getValue()).outputActor;
-                shapeRenderer.line(firstActor.localToStageCoordinates(new Vector2(firstActor.getWidth()/2, firstActor.getHeight()/2)), secondActor.localToStageCoordinates(new Vector2(secondActor.getWidth()/2, secondActor.getHeight()/2)));
+
+                Vector2 vector1 = firstActor.localToStageCoordinates(new Vector2(firstActor.getWidth()/2, firstActor.getHeight()/2));
+                Vector2 vector2 = secondActor.localToStageCoordinates(new Vector2(secondActor.getWidth()/2, secondActor.getHeight()/2));
+
+                this.shapeRenderer.setColor(Color.valueOf("DA863E"));
+                this.shapeRenderer.circle(vector2.x, vector2.y,10);
+                shapeRenderer.rectLine(vector1.x, vector1.y, vector2.x, vector2.y, 10, Color.valueOf("A4DDDB"), Color.valueOf("DA863E"));
+                // shapeRenderer.line(firstActor.localToStageCoordinates(new Vector2(firstActor.getWidth()/2, firstActor.getHeight()/2)), secondActor.localToStageCoordinates(new Vector2(secondActor.getWidth()/2, secondActor.getHeight()/2)));
             }
         }
         shapeRenderer.end();
         shapeRenderer.setProjectionMatrix(camera.combined);
     }
+
     public static class ConnectionData{
         public final UUID first;
         public ConnectionData(UUID first) {
             this.first = first;
         }
     }
-    public abstract class GraphNode{
+
+    public abstract class GraphNode {
         public final UUID id;
         public final Window window;
         public final HashMap<String,UUID> inputs;
         public final HashMap<String,Actor> inputActors;
+        public final HashMap<String, TextureRegion> inputRegions;
         public Actor outputActor;
-        public GraphNode(String name) {
+
+        public final VerticalGroup verticalGroup;
+
+        public GraphNode(String name, String description, boolean removable) {
             this.id = UUID.randomUUID();
             this.window = new Window(name, ISpriteMain.getSkin());
-            this.window.pack();
+
+            this.inputRegions = new HashMap<>();
             this.inputs = new HashMap<>();
             this.inputActors = new HashMap<>();
-            if(hasOutput()){
+            this.verticalGroup = new VerticalGroup();
+
+            final HorizontalGroup miniToolBar = new HorizontalGroup();
+            if (removable) {
+                final TextButton removeButton = new TextButton("X", this.window.getSkin());
+                removeButton.addListener(new ClickListener(){
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        GraphEditor.this.removeNode(GraphEditor.GraphNode.this);
+                        super.clicked(event, x, y);
+                    }
+                });
+
+                miniToolBar.addActor(removeButton);
+            }
+            miniToolBar.addActor(new Label(description, this.window.getSkin()));
+            this.verticalGroup.addActor(miniToolBar);
+            this.verticalGroup.columnLeft();
+
+
+            if (hasOutput()) {
                 HorizontalGroup hgroup = new HorizontalGroup();
                 hgroup.addActor(new Label("output", ISpriteMain.getSkin()));
                 Actor dragOutput = new Image(new TextureRegion(linkOutputTexture));
@@ -141,15 +190,42 @@ public class GraphEditor extends Editor {
                         super.dragStop(event, x, y, pointer, payload, target);
                     }
                 });
-                window.add(hgroup).row();
+                verticalGroup.addActor(hgroup);
                 outputActor = dragOutput;
             }
+
+            window.add(this.verticalGroup);
+
         }
-        public void addInput(String name){
+
+        /**
+         * remove every connection with specified node
+         * @param graphNode
+         */
+        public void disconnectAll(GraphNode graphNode) {
+
+            ArrayList<String> toRemove = new ArrayList<>();
+
+            for (String key : this.inputs.keySet()) {
+                UUID val = this.inputs.get(key);
+                if (val.equals(graphNode.id)) {
+                    this.inputRegions.get(key).setTexture(linkInputTexture);
+                    toRemove.add(key);
+                }
+            }
+
+            toRemove.forEach(this.inputs::remove);
+        }
+
+        public void addInput(String name) {
             HorizontalGroup hgroup = new HorizontalGroup();
-            Actor dragInput = new Image(new TextureRegion(linkInputTexture));
+
+            TextureRegion textureRegion = new TextureRegion(linkInputTexture);
+            Actor dragInput = new Image(textureRegion);
+            this.inputRegions.put(name, textureRegion);
             hgroup.addActor(dragInput);
             hgroup.addActor(new Label(name, ISpriteMain.getSkin()));
+
             dragAndDrop.addTarget(new DragAndDrop.Target(dragInput) {
                 @Override
                 public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
@@ -159,9 +235,10 @@ public class GraphEditor extends Editor {
                 public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
                     ConnectionData output = (ConnectionData) payload.getObject();
                     inputs.put(name, output.first);
+                    textureRegion.setTexture(linkInputFilledTexture);
                 }
             });
-            window.add(hgroup).row();
+            verticalGroup.addActor(hgroup);
             this.inputActors.put(name, dragInput);
         }
         public abstract AnimatedSpritePose getOutputPose();
@@ -174,7 +251,7 @@ public class GraphEditor extends Editor {
     }
     public class FinalPoseGraphNode extends GraphNode{
         public FinalPoseGraphNode() {
-            super("Final Pose");
+            super("Final Pose", "Pose to be displayed by the animation renderer.", false);
             addInput("final");
         }
         @Override
@@ -186,19 +263,21 @@ public class GraphEditor extends Editor {
             return false;
         }
     }
+
     public class AnimatedPoseGraphNode extends GraphNode{
         public final SpriteAnimation animation;
         public AnimatedPoseGraphNode() {
-            super("Animated Pose");
+            super("Animated Pose", "Animated Pose Node", true);
+
             this.animation = new SpriteAnimation();
-            TextButton enterButton = new TextButton("Enter", ISpriteMain.getSkin());
+            TextButton enterButton = new TextButton("Edit", ISpriteMain.getSkin());
             enterButton.addListener(new ClickListener(){
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     ISpriteMain.getInstance().setEditor(new AnimationEditor(animation));
                 }
             });
-            this.window.add(enterButton);
+            this.verticalGroup.addActor(enterButton);
         }
         @Override
         public AnimatedSpritePose getOutputPose() {
@@ -208,9 +287,9 @@ public class GraphEditor extends Editor {
     public class BlendPoseGraphNode extends GraphNode{
         public float blendValue;
         public BlendPoseGraphNode() {
-            super("Blend Pose");
-            addInput("first");
-            addInput("second");
+            super("Blend Pose", "Blends two inputs.", true);
+            addInput("Input1");
+            addInput("Input2");
             this.blendValue = 0.5f;
             this.window.add(new Label("Blend: ", ISpriteMain.getSkin()));
             TextField textField = new TextField(""+blendValue, ISpriteMain.getSkin());
@@ -226,14 +305,14 @@ public class GraphEditor extends Editor {
         }
         @Override
         public AnimatedSpritePose getOutputPose() {
-            return getInput("first").lerp(getInput("second"), blendValue);
+            return getInput("Input1").lerp(getInput("Input2"), blendValue);
         }
     }
     public class MultiplyPoseGraphNode extends GraphNode{
         public float multiplyValue;
         public MultiplyPoseGraphNode() {
-            super("Multiply Pose");
-            addInput("first");
+            super("Multiply Pose", "Multiplies pose by set value.", true);
+            addInput("Pose");
             this.multiplyValue = 1f;
             this.window.add(new Label("Multiply: ", ISpriteMain.getSkin()));
             TextField textField = new TextField(""+multiplyValue, ISpriteMain.getSkin());
@@ -249,12 +328,12 @@ public class GraphEditor extends Editor {
         }
         @Override
         public AnimatedSpritePose getOutputPose() {
-            return getInput("first").multiply(multiplyValue);
+            return getInput("Pose").multiply(multiplyValue);
         }
     }
     public class AddPoseGraphNode extends GraphNode{
         public AddPoseGraphNode() {
-            super("Add Pose");
+            super("Add Pose", "", true);
             addInput("first");
             addInput("second");
         }

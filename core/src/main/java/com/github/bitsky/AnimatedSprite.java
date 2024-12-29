@@ -19,7 +19,7 @@ public class AnimatedSprite {
         this.rootBone = new AnimatedSpriteBone(this, null);
         this.rootBone.name = "root";
         this.bones.put(this.rootBone.id, this.rootBone);
-        this.image = new VertexedImage(new Texture("testimg.png"));
+        this.image = new VertexedImage(new Texture("libgdx.png"));
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();
