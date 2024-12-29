@@ -19,15 +19,15 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.List;
 
 public class GraphEditor extends Editor {
     private final Texture linkInputTexture;
     private final Texture linkInputFilledTexture;
     private final Texture linkOutputTexture;
 
+    private List<ConnectionRecord> connectionRecords = new ArrayList<>();
     private HashMap<UUID, GraphNode> nodes;
     private DragAndDrop dragAndDrop;
     private float time;
@@ -48,12 +48,19 @@ public class GraphEditor extends Editor {
         addNode(new FinalPoseGraphNode(), Vector2.Zero);
 
         this.toolPanelWindow = new ToolPanelWindow("Tools");
-        this.toolPanelWindow.buttonAddPose.addListener(event -> {
-            if (!event.isHandled())
-                return false;
-            Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
-            addNode(new AnimatedPoseGraphNode(), new Vector2(position.x, position.y));
-            return false;
+        this.toolPanelWindow.buttonAddPose.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+                addNode(new AnimatedPoseGraphNode(), new Vector2(position.x, position.y));
+            }
+        });
+        this.toolPanelWindow.buttonAddAND.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+                addNode(new AnimatedPoseAndNode(), new Vector2(position.x, position.y));
+            }
         });
 
         this.stage.addActor(this.toolPanelWindow);
@@ -65,6 +72,12 @@ public class GraphEditor extends Editor {
         node.window.setPosition(position.x, position.y);
     }
 
+    public void removeNode(GraphNode node) {
+        node.window.remove();
+        this.nodes.remove(node.id, node);
+        this.nodes.forEach((nodeKey, nodeValue) -> nodeValue.disconnectAll(node));
+    }
+
     @Override
     public void render() {
         super.render();
@@ -72,13 +85,28 @@ public class GraphEditor extends Editor {
             stage.getCamera().position.add(-Gdx.input.getDeltaX()*2f, Gdx.input.getDeltaY()*2f, 0);
         }
 
-        if (startDragLocation != null) {
-            this.shapeRenderer.setProjectionMatrix(this.stage.getCamera().combined);
-            this.shapeRenderer.begin();
-            this.shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
-            // this.shapeRenderer.rectLine(startDragLocation.x, startDragLocation.y, Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY(), 10, Color.ORANGE, Color.BLUE);
-            this.shapeRenderer.end();
+        this.shapeRenderer.setProjectionMatrix(this.stage.getCamera().combined);
+        this.shapeRenderer.begin();
+        this.shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
+
+        for (ConnectionRecord connectionRecord : connectionRecords) {
+            this.shapeRenderer.rectLine(
+                connectionRecord.actor1.getOriginX(),
+                connectionRecord.actor1.getOriginY(),
+                connectionRecord.actor2.getOriginX(),
+                connectionRecord.actor2.getOriginY(),
+                10);
         }
+
+            /*
+            for (GraphNode graphNode : this.nodes.values()) {
+                for (UUID input : graphNode.inputs.values()) {
+                    GraphNode connectsTo = this.nodes.get(input);
+
+                }
+            }*/
+        // this.shapeRenderer.rectLine(startDragLocation.x, startDragLocation.y, Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY(), 10, Color.ORANGE, Color.BLUE);
+        this.shapeRenderer.end();
     }
 
     @Override
@@ -91,11 +119,12 @@ public class GraphEditor extends Editor {
         public final UUID id;
         public final Window window;
         public final HashMap<String,UUID> inputs;
+        public final HashMap<String, TextureRegion> inputRegions;
 
         public final VerticalGroup verticalGroup;
 
         public GraphNode(String name, String description, boolean removable) {
-
+            this.inputRegions = new HashMap<>();
             this.id = UUID.randomUUID();
             this.window = new Window(name, ISpriteMain.getSkin());
             // this.window.pack();
@@ -109,8 +138,7 @@ public class GraphEditor extends Editor {
                 removeButton.addListener(new ClickListener(){
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        GraphEditor.this.nodes.remove(id);
-                        window.remove();
+                        GraphEditor.this.removeNode(GraphEditor.GraphNode.this);
                         super.clicked(event, x, y);
                     }
                 });
@@ -132,7 +160,7 @@ public class GraphEditor extends Editor {
                     public DragAndDrop.Payload dragStart(InputEvent inputEvent, float v, float v1, int i) {
                         startDragLocation = new Vector2(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
                         final DragAndDrop.Payload payload = new DragAndDrop.Payload();
-                        payload.setObject(id);
+                        payload.setObject(new ConnectionPayload(id, dragOutput));
                         return payload;
                     }
 
@@ -147,9 +175,28 @@ public class GraphEditor extends Editor {
 
             window.add(verticalGroup);
         }
+
+        /**
+         * remove every connection with specified node
+         * @param graphNode
+         */
+        public void disconnectAll(GraphNode graphNode) {
+
+            for (String key : this.inputs.keySet()) {
+                UUID val = this.inputs.get(key);
+                if (val.equals(graphNode.id)) {
+                    this.inputs.remove(key, val);
+                    this.inputRegions.get(key).setTexture(linkInputTexture);
+                }
+            }
+        }
+
         public void addInput(String name){
             HorizontalGroup hgroup = new HorizontalGroup();
             TextureRegion inputRegion = new TextureRegion(linkInputTexture);
+
+            this.inputRegions.put(name, inputRegion);
+
             Image dragInput = new Image(inputRegion);
             hgroup.addActor(dragInput);
             hgroup.addActor(new Label(name, ISpriteMain.getSkin()));
@@ -163,8 +210,12 @@ public class GraphEditor extends Editor {
                 @Override
                 public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
                     inputRegion.setTexture(linkInputFilledTexture);
-                    inputs.replace(name, (UUID) payload.getObject());
 
+                    ConnectionPayload payload1 = ((ConnectionPayload) payload.getObject());
+                    inputs.put(name, payload1.uuid);
+
+                    ConnectionRecord connectionRecord = new ConnectionRecord(payload1.actor, dragInput);
+                    connectionRecords.add(connectionRecord);
                 }
             });
             verticalGroup.addActor(hgroup);
@@ -181,14 +232,17 @@ public class GraphEditor extends Editor {
     private class ToolPanelWindow extends Window {
 
         public final Button buttonAddPose;
+        public final Button buttonAddAND;
 
         public ToolPanelWindow(String title) {
             super(title, new Skin(Gdx.files.internal("skin/uiskin.json")));
             this.setMovable(true);
 
             this.buttonAddPose = new TextButton("Add Pose", this.getSkin());
+            this.buttonAddAND = new TextButton("Add AND", this.getSkin());
             this.bottom().left();
             this.add(this.buttonAddPose);
+            this.add(this.buttonAddAND);
             this.pack();
 
             this.setWidth(Gdx.graphics.getWidth());
@@ -219,8 +273,11 @@ public class GraphEditor extends Editor {
             return false;
         }
     }
-    public class AnimatedPoseGraphNode extends GraphNode{
+
+    public class AnimatedPoseGraphNode extends GraphNode {
+
         public final SpriteAnimation animation;
+
         public AnimatedPoseGraphNode() {
             super("Animated Pose", "Animation Node", true);
             this.animation = new SpriteAnimation();
@@ -239,4 +296,55 @@ public class GraphEditor extends Editor {
             return animation.getPose(time);
         }
     }
+
+    public class AnimatedPoseAndNode extends GraphNode {
+
+        public AnimatedPoseAndNode() {
+            super("AND", "Simple AnimPose merger.", true);
+            addInput("Input1");
+            addInput("Input2");
+            this.window.pack();
+        }
+
+        @Override
+        public AnimatedSpritePose getOutputPose() {
+            return null;
+        }
+    }
+
+    private class ConnectionPayload {
+        private final UUID uuid;
+        private final Actor actor;
+
+        public ConnectionPayload(UUID uuid, Actor actor) {
+            this.uuid = uuid;
+            this.actor = actor;
+        }
+
+        public UUID getUuid() {
+            return uuid;
+        }
+
+        public Actor getActor() {
+            return actor;
+        }
+    }
+
+    private class ConnectionRecord {
+        private final Actor actor1;
+        private final Actor actor2;
+
+        public ConnectionRecord(Actor actor1, Actor actor2) {
+            this.actor1 = actor1;
+            this.actor2 = actor2;
+        }
+
+        public Actor getActor1() {
+            return actor1;
+        }
+
+        public Actor getActor2() {
+            return actor2;
+        }
+    };
 }
