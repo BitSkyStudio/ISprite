@@ -29,6 +29,13 @@ public class AnimatedSpritePose {
         }
         return new AnimatedSpritePose(newTransforms);
     }
+    public AnimatedSpritePose multiply(float s){
+        HashMap<UUID, Transform> newTransforms = new HashMap<>();
+        for(Map.Entry<UUID, Transform> entry : boneTransforms.entrySet()){
+            newTransforms.put(entry.getKey(), entry.getValue().multiply(s));
+        }
+        return new AnimatedSpritePose(newTransforms);
+    }
     public void drawDebugBones(AnimatedSprite sprite, ShapeRenderer shapeRenderer, Function<UUID,Color> highlighter){
         drawDebugBone(sprite, sprite.rootBone, new Transform(new Vector2(), 0f, 1f), shapeRenderer, highlighter);
     }

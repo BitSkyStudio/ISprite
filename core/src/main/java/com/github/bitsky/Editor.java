@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
@@ -20,11 +21,15 @@ public abstract class Editor implements InputProcessor {
     protected OrthographicCamera camera;
     protected ShapeRenderer shapeRenderer;
     protected Stage stage;
+    protected PolygonSpriteBatch polygonSpriteBatch;
+    protected SpriteBatch spriteBatch;
 
     public Editor() {
         this.camera = new OrthographicCamera(1920, 1080);
         this.shapeRenderer = new ShapeRenderer();
-        this.stage = new Stage(/*new ScalingViewport(Scaling.stretch, 1920, 1080, this.camera), new SpriteBatch()*/);
+        this.stage = new Stage();
+        this.polygonSpriteBatch = new PolygonSpriteBatch();
+        this.spriteBatch = new SpriteBatch();
     }
     public void render(){
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
@@ -33,6 +38,8 @@ public abstract class Editor implements InputProcessor {
         shapeRenderer.setAutoShapeType(true);
         camera.update();
         shapeRenderer.setProjectionMatrix(camera.combined);
+        polygonSpriteBatch.setProjectionMatrix(camera.combined);
+        spriteBatch.setProjectionMatrix(camera.combined);
         stage.act();
         stage.draw();
     }
@@ -43,6 +50,8 @@ public abstract class Editor implements InputProcessor {
     }
     public void dispose(){
         shapeRenderer.dispose();
+        polygonSpriteBatch.dispose();
+        spriteBatch.dispose();
         stage.dispose();
     }
 

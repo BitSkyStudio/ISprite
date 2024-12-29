@@ -2,23 +2,20 @@ package com.github.bitsky;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.Tree;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
 public class BoneEditor extends Editor {
-    private static AnimatedSpritePose EMPTY_POSE = new AnimatedSpritePose(new HashMap<>());
+    public static AnimatedSpritePose EMPTY_POSE = new AnimatedSpritePose(new HashMap<>());
     private UUID movingId;
     private Table boneHierarchyTable;
     private Tree<BoneNode,AnimatedSpriteBone> tree;
@@ -49,9 +46,36 @@ public class BoneEditor extends Editor {
             recurseAddHierarchy(childNode);
         }
     }
-    public static class BoneNode extends Tree.Node<BoneNode,AnimatedSpriteBone,Label>{
+    public class BoneNode extends Tree.Node<BoneNode,AnimatedSpriteBone,HorizontalGroup>{
+        public final Label label;
         public BoneNode(AnimatedSpriteBone bone){
-            super(new Label(bone.name, ISpriteMain.getSkin()));
+            super(new HorizontalGroup());
+            this.label = new Label(bone.name, ISpriteMain.getSkin());
+            getActor().addActor(label);
+            TextButton colorButton = new TextButton(" ", ISpriteMain.getSkin());
+            colorButton.setColor(bone.color);
+            getActor().addActor(colorButton);
+            getActor().addListener(new ClickListener(){
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if(this.getTapCount() == 2){
+                        TextField input = new TextField(bone.name, ISpriteMain.getSkin());
+                        Dialog dialog = new Dialog("Enter new name", ISpriteMain.getSkin(), "dialog") {
+                            public void result(Object obj) {
+                                if (obj instanceof String) {
+                                    bone.name = input.getText();
+                                    label.setText(bone.name);
+                                }
+                            }
+                        };
+                        dialog.setMovable(false);
+                        dialog.button("Cancel");
+                        dialog.button("Ok", "");
+                        dialog.getContentTable().add(input);
+                        dialog.show(stage);
+                    }
+                }
+            });
             setValue(bone);
         }
     }
@@ -59,6 +83,15 @@ public class BoneEditor extends Editor {
     public void render() {
         super.render();
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
+
+        spriteBatch.begin();
+        spriteBatch.setColor(1f, 1f, 1f, 0.3f);
+        spriteBatch.draw(sprite.image.texture, 0, 0);
+        spriteBatch.end();
+        polygonSpriteBatch.begin();
+        sprite.image.draw(polygonSpriteBatch, 0, 0, EMPTY_POSE);
+        polygonSpriteBatch.end();
+
         HashMap<UUID, Transform> transforms = EMPTY_POSE.getBoneTransforms(sprite, new Transform().lock());
         UUID moused = null;
         Vector3 worldMouse3 = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
@@ -72,7 +105,24 @@ public class BoneEditor extends Editor {
         shapeRenderer.begin();
         UUID finalMoused = moused;
         EMPTY_POSE.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)? Color.RED:(tree.getSelection().contains(boneNodes.get(uuid))?Color.BLUE:Color.GREEN));
+        sprite.image.debugDraw(shapeRenderer, 0, 0);
         shapeRenderer.end();
+
+        if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
+            sprite.image.addPoint(worldMouse.cpy(), sprite.rootBone);
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.B)){
+            float speed = 0.5f * Gdx.graphics.getDeltaTime();
+            for(VertexedImage.Vertex vertex : sprite.image.points) {
+                if(vertex.position.dst(worldMouse) > 10f)
+                    continue;
+                Iterator<BoneNode> it = tree.getSelection().iterator();
+                while (it.hasNext()) {
+                    vertex.addWeight(it.next().getValue().id, speed/tree.getSelection().size(), !it.hasNext());
+                }
+            }
+        }
+
 
         if(movingId != null){
             AnimatedSpriteBone movingBone = sprite.bones.get(movingId);

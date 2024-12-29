@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.github.bitsky.AnimationEditor;
 import com.github.bitsky.AnimationTrack;
+import com.github.bitsky.ISpriteMain;
 import com.github.bitsky.SpriteAnimation;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class DedicatedKeyFrameWindow extends Window {
     private float animationStepTime;
 
     public DedicatedKeyFrameWindow(String title, SpriteAnimation animation, AnimationEditor animationEditor) {
-        super(title, new Skin(Gdx.files.internal("skin/uiskin.json")));
+        super(title, ISpriteMain.getSkin());
         this.spriteAnimation = animation;
 
         this.setResizable(true);
@@ -68,9 +69,10 @@ public class DedicatedKeyFrameWindow extends Window {
 
     private void refreshTracks(UUID onlyUUID) {
         AnimationTrack animationTrack = this.spriteAnimation.getTrack(onlyUUID);
-        addKeyFrameRow(new KeyframeRow(animationTrack.translations, "Translation"));
-        addKeyFrameRow(new KeyframeRow(animationTrack.scales, "Scale"));
-        addKeyFrameRow(new KeyframeRow(animationTrack.rotations, "Rotation"));
+        String boneName = ISpriteMain.getInstance().sprite.bones.get(onlyUUID).name;
+        addKeyFrameRow(new KeyframeRow(animationTrack.translations, "Translation(" + boneName + ")"));
+        addKeyFrameRow(new KeyframeRow(animationTrack.scales, "Scale(" + boneName + ")"));
+        addKeyFrameRow(new KeyframeRow(animationTrack.rotations, "Rotation(" + boneName + ")"));
     }
 
     private void clearTracks() {
@@ -125,7 +127,8 @@ public class DedicatedKeyFrameWindow extends Window {
         public void changeTime(float time) {
             if (time < 0)
                 time = 0;
-
+            if(this.keyframeRow.propertyTrack.track.containsKey(time))
+                return;
             this.keyframeRow.propertyTrack.modifyKeyframe(this.time, time);
             this.time = time;
             DedicatedKeyFrameWindow.this.getTitleLabel().setText("TIME: (S)" + time);
@@ -180,6 +183,10 @@ public class DedicatedKeyFrameWindow extends Window {
                     if (marker.mouseColliding())
                         this.mouseDragMarker = marker;
                 });
+                if(this.mouseDragMarker == null){
+                    animationEditor.time = (x - (this.getParent().getX() + getX() + 200)) / TIME_SUB_DIVISION;
+                    animationEditor.playing = false;
+                }
             }
             this.mouseHovering = true;
             return super.hit(x, y, touchable);
@@ -199,8 +206,19 @@ public class DedicatedKeyFrameWindow extends Window {
             if (this.mouseDragMarker != null) {
                 this.mouseDragMarker.changeTime((Gdx.input.getX() - x) / TIME_SUB_DIVISION);
 
-                if (!Gdx.input.isButtonPressed(Input.Buttons.LEFT))
+                if(Gdx.input.isKeyJustPressed(Input.Keys.FORWARD_DEL)){
+                    this.mouseDragMarker.keyframeRow.propertyTrack.track.remove(this.mouseDragMarker.time);
+                    this.mouseDragMarker.keyframeRow.markers.remove(mouseDragMarker);
                     this.mouseDragMarker = null;
+                }
+                /*if(Gdx.input.isKeyJustPressed(Input.Keys.C)){
+                    AnimationTrack.ValueInterpolationPair pair = this.mouseDragMarker.keyframeRow.propertyTrack.track.get(this.mouseDragMarker.time);
+                    this.mouseDragMarker.keyframeRow.propertyTrack.addKeyframe(this.mouseDragMarker.time, (Object) pair.value, pair.interpolationFunction);
+                    this.mouseDragMarker.changeTime(1000);
+                }*/
+                if (!Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+                    this.mouseDragMarker = null;
+                }
             }
 
             super.draw(batch, parentAlpha);
