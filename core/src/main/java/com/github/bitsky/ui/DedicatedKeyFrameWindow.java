@@ -61,7 +61,6 @@ public class DedicatedKeyFrameWindow extends Window {
             if (keyframeRow1.propertyTrack.equals(keyframeRow.propertyTrack))
                 return;
 
-        // this.left();
         this.add(keyframeRow);
         this.row();
         this.keyframeRows.add(keyframeRow);

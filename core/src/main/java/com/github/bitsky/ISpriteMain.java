@@ -45,6 +45,7 @@ public class ISpriteMain extends ApplicationAdapter {
         if(Gdx.input.isKeyJustPressed(Input.Keys.TAB)){
             if(editor instanceof BoneEditor){
                 setEditor(graphEditor);
+                // setEditor(new CustomGraphEditor());
             } else {
                 setEditor(new BoneEditor());
             }

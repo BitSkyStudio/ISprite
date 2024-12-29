@@ -4,10 +4,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -26,6 +29,9 @@ public class GraphEditor extends Editor {
     private HashMap<UUID, GraphNode> nodes;
     private DragAndDrop dragAndDrop;
     private float time;
+
+    private final ToolPanelWindow toolPanelWindow;
+
     public GraphEditor() {
         this.linkInputTexture = new Texture("link_input.png");
         this.linkInputFilledTexture = new Texture("link_input_filled.png");
@@ -35,6 +41,17 @@ public class GraphEditor extends Editor {
         this.nodes = new HashMap<>();
 
         addNode(new FinalPoseGraphNode(), Vector2.Zero);
+
+        this.toolPanelWindow = new ToolPanelWindow("Tools");
+        this.toolPanelWindow.buttonAddPose.addListener(event -> {
+            if (!event.isHandled())
+                return false;
+            Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+            addNode(new AnimatedPoseGraphNode(), new Vector2(position.x, position.y));
+            return false;
+        });
+
+        this.stage.addActor(this.toolPanelWindow);
     }
     public void addNode(GraphNode node, Vector2 position){
         this.nodes.put(node.id, node);
@@ -42,26 +59,33 @@ public class GraphEditor extends Editor {
         node.window.pack();
         node.window.setPosition(position.x, position.y);
     }
+
     @Override
     public void render() {
         super.render();
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
             stage.getCamera().position.add(-Gdx.input.getDeltaX()*2f, Gdx.input.getDeltaY()*2f, 0);
         }
-        if(Gdx.input.isKeyJustPressed(Input.Keys.P)){
-            Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
-            addNode(new AnimatedPoseGraphNode(), new Vector2(position.x, position.y));
-        }
     }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+    }
+
     public abstract class GraphNode{
+
         public final UUID id;
         public final Window window;
         public final HashMap<String,UUID> inputs;
+
         public GraphNode(String name) {
+
             this.id = UUID.randomUUID();
             this.window = new Window(name, ISpriteMain.getSkin());
             this.window.pack();
             this.inputs = new HashMap<>();
+
             if(hasOutput()){
                 HorizontalGroup hgroup = new HorizontalGroup();
                 hgroup.addActor(new Label("output", ISpriteMain.getSkin()));
@@ -101,6 +125,33 @@ public class GraphEditor extends Editor {
             return nodes.get(inputs.get(input)).getOutputPose();
         }
     }
+
+    private class ToolPanelWindow extends Window {
+
+        public final Button buttonAddPose;
+
+        public ToolPanelWindow(String title) {
+            super(title, new Skin(Gdx.files.internal("skin/uiskin.json")));
+            this.setMovable(true);
+            // this.setZIndex(100);
+
+
+            this.buttonAddPose = new TextButton("Add Pose", this.getSkin());
+            this.bottom().left();
+            this.add(this.buttonAddPose);
+            this.pack();
+
+            this.setWidth(Gdx.graphics.getWidth());
+            this.setY(Gdx.graphics.getHeight() - this.getHeight());
+        }
+
+        @Override
+        public void draw(Batch batch, float parentAlpha) {
+
+            super.draw(batch, parentAlpha);
+        }
+    }
+
     public class FinalPoseGraphNode extends GraphNode{
         public FinalPoseGraphNode() {
             super("Final Pose");
@@ -128,6 +179,7 @@ public class GraphEditor extends Editor {
                 }
             });
             this.window.add(enterButton);
+            this.window.pack();
         }
         @Override
         public AnimatedSpritePose getOutputPose() {

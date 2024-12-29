@@ -30,6 +30,7 @@ public abstract class Editor implements InputProcessor {
         shapeRenderer.setAutoShapeType(true);
         camera.update();
         shapeRenderer.setProjectionMatrix(camera.combined);
+        stage.getCamera().update();
         stage.act();
         stage.draw();
     }

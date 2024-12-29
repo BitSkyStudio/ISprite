@@ -23,6 +23,7 @@ public class BoneEditor extends Editor {
     private Table boneHierarchyTable;
     private Tree<BoneNode,AnimatedSpriteBone> tree;
     private HashMap<UUID,BoneNode> boneNodes;
+
     public BoneEditor() {
         this.movingId = null;
         this.boneHierarchyTable = new Table();
