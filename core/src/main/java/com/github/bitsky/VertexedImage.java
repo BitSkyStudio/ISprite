@@ -92,17 +92,23 @@ public class VertexedImage {
             this.position = position;
             this.weights = weights;
         }
-        public void addWeight(UUID bone, float value, boolean normalize){
-            weights.put(bone, weights.getOrDefault(bone, 0f) + value);
-            if(normalize){
-                float sum = 0;
-                for(float w : weights.values()){
-                    sum += w;
-                }
-                for(UUID id : weights.keySet()){
-                    weights.put(id, weights.get(id)/sum);
-                }
+        public void addWeight(UUID bone, float value){
+            value += weights.getOrDefault(bone, 0f);
+            if(value >= 1){
+                weights.clear();
+                weights.put(bone, 1f);
+                return;
             }
+            weights.remove(bone);
+
+            float sum = 0;
+            for(Map.Entry<UUID, Float> w : weights.entrySet()){
+                sum += w.getValue();
+            }
+            for(UUID id : weights.keySet()){
+                weights.put(id, weights.get(id)/(sum/(1-value)));
+            }
+            weights.put(bone, value);
         }
     }
 }

@@ -116,9 +116,8 @@ public class BoneEditor extends Editor {
             for(VertexedImage.Vertex vertex : sprite.image.points) {
                 if(vertex.position.dst(worldMouse) > 10f)
                     continue;
-                Iterator<BoneNode> it = tree.getSelection().iterator();
-                while (it.hasNext()) {
-                    vertex.addWeight(it.next().getValue().id, speed/tree.getSelection().size(), !it.hasNext());
+                if(!tree.getSelection().isEmpty()){
+                    vertex.addWeight(tree.getSelection().getLastSelected().getValue().id, speed/tree.getSelection().size());
                 }
             }
         }
