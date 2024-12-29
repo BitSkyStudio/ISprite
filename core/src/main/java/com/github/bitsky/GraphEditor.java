@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +57,7 @@ public class GraphEditor extends Editor {
     public void addNode(GraphNode node, Vector2 position){
         this.nodes.put(node.id, node);
         this.stage.addActor(node.window);
-        node.window.pack();
+        // node.window.pack();
         node.window.setPosition(position.x, position.y);
     }
 
@@ -79,16 +80,23 @@ public class GraphEditor extends Editor {
         public final Window window;
         public final HashMap<String,UUID> inputs;
 
-        public GraphNode(String name) {
+        public final VerticalGroup verticalGroup;
+
+        public GraphNode(String name, String description) {
 
             this.id = UUID.randomUUID();
             this.window = new Window(name, ISpriteMain.getSkin());
-            this.window.pack();
+            // this.window.pack();
             this.inputs = new HashMap<>();
+
+            this.verticalGroup = new VerticalGroup();
+            this.verticalGroup.addActor(new Label(description, this.window.getSkin()));
+
+            this.verticalGroup.columnLeft();
 
             if(hasOutput()){
                 HorizontalGroup hgroup = new HorizontalGroup();
-                hgroup.addActor(new Label("output", ISpriteMain.getSkin()));
+                hgroup.addActor(new Label("Out", ISpriteMain.getSkin()));
                 Actor dragOutput = new Image(new TextureRegion(linkOutputTexture));
                 hgroup.addActor(dragOutput);
                 dragAndDrop.addSource(new DragAndDrop.Source(dragOutput) {
@@ -97,14 +105,17 @@ public class GraphEditor extends Editor {
                         return new DragAndDrop.Payload();
                     }
                 });
-                window.add(hgroup);
+                verticalGroup.addActor(hgroup);
             }
+
+            window.add(verticalGroup);
         }
         public void addInput(String name){
             HorizontalGroup hgroup = new HorizontalGroup();
             Actor dragInput = new Image(new TextureRegion(linkInputTexture));
             hgroup.addActor(dragInput);
             hgroup.addActor(new Label(name, ISpriteMain.getSkin()));
+
             dragAndDrop.addTarget(new DragAndDrop.Target(dragInput) {
                 @Override
                 public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
@@ -115,7 +126,7 @@ public class GraphEditor extends Editor {
 
                 }
             });
-            window.add(hgroup);
+            verticalGroup.addActor(hgroup);
         }
         public abstract AnimatedSpritePose getOutputPose();
         public boolean hasOutput(){
@@ -133,8 +144,6 @@ public class GraphEditor extends Editor {
         public ToolPanelWindow(String title) {
             super(title, new Skin(Gdx.files.internal("skin/uiskin.json")));
             this.setMovable(true);
-            // this.setZIndex(100);
-
 
             this.buttonAddPose = new TextButton("Add Pose", this.getSkin());
             this.bottom().left();
@@ -147,15 +156,18 @@ public class GraphEditor extends Editor {
 
         @Override
         public void draw(Batch batch, float parentAlpha) {
-
             super.draw(batch, parentAlpha);
         }
     }
 
     public class FinalPoseGraphNode extends GraphNode{
         public FinalPoseGraphNode() {
-            super("Final Pose");
-            addInput("final");
+            super("Final Pose", "Pose to be displayed by the animation renderer.");
+
+            this.window.bottom();
+            addInput("Input");
+            // this.window.setWidth(200);
+            this.window.pack();
         }
         @Override
         public AnimatedSpritePose getOutputPose() {
@@ -169,16 +181,16 @@ public class GraphEditor extends Editor {
     public class AnimatedPoseGraphNode extends GraphNode{
         public final SpriteAnimation animation;
         public AnimatedPoseGraphNode() {
-            super("Animated Pose");
+            super("Animated Pose", "Animation Node");
             this.animation = new SpriteAnimation();
-            TextButton enterButton = new TextButton("Enter", ISpriteMain.getSkin());
+            TextButton enterButton = new TextButton("Edit", ISpriteMain.getSkin());
             enterButton.addListener(new ClickListener(){
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     ISpriteMain.getInstance().setEditor(new AnimationEditor(animation));
                 }
             });
-            this.window.add(enterButton);
+            this.verticalGroup.addActor(enterButton);
             this.window.pack();
         }
         @Override
