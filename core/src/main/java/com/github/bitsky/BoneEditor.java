@@ -83,6 +83,10 @@ public class BoneEditor extends Editor {
         super.render();
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
 
+        spriteBatch.begin();
+        spriteBatch.setColor(1f, 1f, 1f, 0.3f);
+        spriteBatch.draw(sprite.image.texture, 0, 0);
+        spriteBatch.end();
         polygonSpriteBatch.begin();
         sprite.image.draw(polygonSpriteBatch, 0, 0, EMPTY_POSE);
         polygonSpriteBatch.end();
