@@ -109,13 +109,15 @@ public class GraphEditor extends Editor {
             for(Map.Entry<String, UUID> entry : node.inputs.entrySet()){
                 Actor firstActor = node.inputActors.get(entry.getKey());
                 Actor secondActor = nodes.get(entry.getValue()).outputActor;
+                GraphNode secondNode = nodes.get(entry.getValue());
 
                 Vector2 vector1 = firstActor.localToStageCoordinates(new Vector2(firstActor.getWidth()/2, firstActor.getHeight()/2));
                 Vector2 vector2 = secondActor.localToStageCoordinates(new Vector2(secondActor.getWidth()/2, secondActor.getHeight()/2));
 
+                // edge fix
                 this.shapeRenderer.setColor(Color.valueOf("DA863E"));
-                this.shapeRenderer.circle(vector2.x, vector2.y,10);
-                shapeRenderer.rectLine(vector1.x, vector1.y, vector2.x, vector2.y, 10, Color.valueOf("A4DDDB"), Color.valueOf("DA863E"));
+                this.shapeRenderer.circle(secondNode.window.getX() + secondNode.window.getWidth(), vector2.y,10);
+                shapeRenderer.rectLine(vector1.x, vector1.y, secondNode.window.getX() + secondNode.window.getWidth(), vector2.y, 10, Color.valueOf("A4DDDB"), Color.valueOf("DA863E"));
                 // shapeRenderer.line(firstActor.localToStageCoordinates(new Vector2(firstActor.getWidth()/2, firstActor.getHeight()/2)), secondActor.localToStageCoordinates(new Vector2(secondActor.getWidth()/2, secondActor.getHeight()/2)));
             }
         }
