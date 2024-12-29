@@ -30,6 +30,7 @@ public class GraphEditor extends Editor {
     private float time;
     private Table rightClickMenu;
     private HashMap<String, Supplier<GraphNode>> nodeTypes;
+
     public GraphEditor() {
         this.linkInputTexture = new Texture("link_input.png");
         this.linkInputFilledTexture = new Texture("link_input_filled.png");
@@ -228,6 +229,15 @@ public class GraphEditor extends Editor {
             hgroup.addActor(dragInput);
             hgroup.addActor(new Label(name, ISpriteMain.getSkin()));
 
+            dragInput.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    inputs.remove(name);
+                    textureRegion.setTexture(linkInputTexture);
+                    super.clicked(event, x, y);
+                }
+            });
+
             dragAndDrop.addTarget(new DragAndDrop.Target(dragInput) {
                 @Override
                 public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
@@ -254,7 +264,7 @@ public class GraphEditor extends Editor {
     public class FinalPoseGraphNode extends GraphNode{
         public FinalPoseGraphNode() {
             super("Final Pose", "Pose to be displayed by the animation renderer.", false);
-            addInput("final");
+            addInput("Out");
         }
         @Override
         public AnimatedSpritePose getOutputPose() {
@@ -290,8 +300,8 @@ public class GraphEditor extends Editor {
         public float blendValue;
         public BlendPoseGraphNode() {
             super("Blend Pose", "Blends two inputs.", true);
-            addInput("Input1");
-            addInput("Input2");
+            addInput("Pose1");
+            addInput("Pose2");
             this.blendValue = 0.5f;
             this.window.add(new Label("Blend: ", ISpriteMain.getSkin()));
             TextField textField = new TextField(""+blendValue, ISpriteMain.getSkin());
@@ -307,7 +317,7 @@ public class GraphEditor extends Editor {
         }
         @Override
         public AnimatedSpritePose getOutputPose() {
-            return getInput("Input1").lerp(getInput("Input2"), blendValue);
+            return getInput("Pose1").lerp(getInput("Pose2"), blendValue);
         }
     }
     public class MultiplyPoseGraphNode extends GraphNode{
@@ -335,13 +345,13 @@ public class GraphEditor extends Editor {
     }
     public class AddPoseGraphNode extends GraphNode{
         public AddPoseGraphNode() {
-            super("Add Pose", "", true);
-            addInput("first");
-            addInput("second");
+            super("Add Pose", "Combine two poses.", true);
+            addInput("Pose1");
+            addInput("Pose2");
         }
         @Override
         public AnimatedSpritePose getOutputPose() {
-            return getInput("first").add(getInput("second"));
+            return getInput("Pose1").add(getInput("Pose2"));
         }
     }
 }
