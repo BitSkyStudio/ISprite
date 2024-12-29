@@ -9,10 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class BoneEditor extends Editor {
     public static AnimatedSpritePose EMPTY_POSE = new AnimatedSpritePose(new HashMap<>());
@@ -54,6 +51,15 @@ public class BoneEditor extends Editor {
             getActor().addActor(label);
             TextButton colorButton = new TextButton(" ", ISpriteMain.getSkin());
             colorButton.setColor(bone.color);
+            colorButton.addListener(new ClickListener(){
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    Random random = new Random();
+                    Color newColor = new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1f);
+                    colorButton.setColor(newColor);
+                    bone.color = newColor;
+                }
+            });
             getActor().addActor(colorButton);
             getActor().addListener(new ClickListener(){
                 @Override
