@@ -82,7 +82,7 @@ public class GraphEditor extends Editor {
 
         public final VerticalGroup verticalGroup;
 
-        public GraphNode(String name, String description) {
+        public GraphNode(String name, String description, boolean removable) {
 
             this.id = UUID.randomUUID();
             this.window = new Window(name, ISpriteMain.getSkin());
@@ -90,9 +90,26 @@ public class GraphEditor extends Editor {
             this.inputs = new HashMap<>();
 
             this.verticalGroup = new VerticalGroup();
-            this.verticalGroup.addActor(new Label(description, this.window.getSkin()));
+
+            final HorizontalGroup miniToolBar = new HorizontalGroup();
+            if (removable) {
+                final TextButton removeButton = new TextButton("X", this.window.getSkin());
+                removeButton.addListener(new ClickListener(){
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        GraphEditor.this.nodes.remove(id);
+                        window.remove();
+                        super.clicked(event, x, y);
+                    }
+                });
+
+                miniToolBar.addActor(removeButton);
+            }
+            miniToolBar.addActor(new Label(description, this.window.getSkin()));
+            this.verticalGroup.addActor(miniToolBar);
 
             this.verticalGroup.columnLeft();
+
 
             if(hasOutput()){
                 HorizontalGroup hgroup = new HorizontalGroup();
@@ -162,7 +179,7 @@ public class GraphEditor extends Editor {
 
     public class FinalPoseGraphNode extends GraphNode{
         public FinalPoseGraphNode() {
-            super("Final Pose", "Pose to be displayed by the animation renderer.");
+            super("Final Pose", "Pose to be displayed by the animation renderer.", false);
 
             this.window.bottom();
             addInput("Input");
@@ -181,7 +198,7 @@ public class GraphEditor extends Editor {
     public class AnimatedPoseGraphNode extends GraphNode{
         public final SpriteAnimation animation;
         public AnimatedPoseGraphNode() {
-            super("Animated Pose", "Animation Node");
+            super("Animated Pose", "Animation Node", true);
             this.animation = new SpriteAnimation();
             TextButton enterButton = new TextButton("Edit", ISpriteMain.getSkin());
             enterButton.addListener(new ClickListener(){
