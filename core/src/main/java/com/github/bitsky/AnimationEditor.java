@@ -61,6 +61,10 @@ public class AnimationEditor extends Editor {
             }
         }
 
+        polygonSpriteBatch.begin();
+        sprite.image.draw(polygonSpriteBatch, 0, 0, pose);
+        polygonSpriteBatch.end();
+
         shapeRenderer.begin();
         UUID finalMoused = moused;
         pose.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)?Color.RED:Color.GREEN);
