@@ -37,7 +37,7 @@ public class ISpriteMain extends ApplicationAdapter {
     public void render() {
         this.time += Gdx.graphics.getDeltaTime();
 
-        Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1f);
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         editor.render();
@@ -45,6 +45,7 @@ public class ISpriteMain extends ApplicationAdapter {
         if(Gdx.input.isKeyJustPressed(Input.Keys.TAB)){
             if(editor instanceof BoneEditor){
                 setEditor(graphEditor);
+                // setEditor(new CustomGraphEditor());
             } else {
                 setEditor(new BoneEditor());
             }
