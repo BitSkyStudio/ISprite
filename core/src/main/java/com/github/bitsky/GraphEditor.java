@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -30,6 +31,9 @@ public class GraphEditor extends Editor {
     private HashMap<UUID, GraphNode> nodes;
     private DragAndDrop dragAndDrop;
     private float time;
+
+    private boolean isDragging;
+    private Vector2 startDragLocation;
 
     private final ToolPanelWindow toolPanelWindow;
 
@@ -66,6 +70,14 @@ public class GraphEditor extends Editor {
         super.render();
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
             stage.getCamera().position.add(-Gdx.input.getDeltaX()*2f, Gdx.input.getDeltaY()*2f, 0);
+        }
+
+        if (startDragLocation != null) {
+            this.shapeRenderer.setProjectionMatrix(this.stage.getCamera().combined);
+            this.shapeRenderer.begin();
+            this.shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
+            // this.shapeRenderer.rectLine(startDragLocation.x, startDragLocation.y, Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY(), 10, Color.ORANGE, Color.BLUE);
+            this.shapeRenderer.end();
         }
     }
 
@@ -110,7 +122,6 @@ public class GraphEditor extends Editor {
 
             this.verticalGroup.columnLeft();
 
-
             if(hasOutput()){
                 HorizontalGroup hgroup = new HorizontalGroup();
                 hgroup.addActor(new Label("Out", ISpriteMain.getSkin()));
@@ -119,7 +130,16 @@ public class GraphEditor extends Editor {
                 dragAndDrop.addSource(new DragAndDrop.Source(dragOutput) {
                     @Override
                     public DragAndDrop.Payload dragStart(InputEvent inputEvent, float v, float v1, int i) {
-                        return new DragAndDrop.Payload();
+                        startDragLocation = new Vector2(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
+                        final DragAndDrop.Payload payload = new DragAndDrop.Payload();
+                        payload.setObject(id);
+                        return payload;
+                    }
+
+                    @Override
+                    public void dragStop(InputEvent event, float x, float y, int pointer, DragAndDrop.Payload payload, DragAndDrop.Target target) {
+                        startDragLocation = null;
+                        super.dragStop(event, x, y, pointer, payload, target);
                     }
                 });
                 verticalGroup.addActor(hgroup);
@@ -129,17 +149,21 @@ public class GraphEditor extends Editor {
         }
         public void addInput(String name){
             HorizontalGroup hgroup = new HorizontalGroup();
-            Actor dragInput = new Image(new TextureRegion(linkInputTexture));
+            TextureRegion inputRegion = new TextureRegion(linkInputTexture);
+            Image dragInput = new Image(inputRegion);
             hgroup.addActor(dragInput);
             hgroup.addActor(new Label(name, ISpriteMain.getSkin()));
 
             dragAndDrop.addTarget(new DragAndDrop.Target(dragInput) {
                 @Override
-                public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
-                    return false;
+                public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                    return true;
                 }
+
                 @Override
-                public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
+                public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                    inputRegion.setTexture(linkInputFilledTexture);
+                    inputs.replace(name, (UUID) payload.getObject());
 
                 }
             });

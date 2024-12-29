@@ -5,11 +5,14 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public abstract class Editor implements InputProcessor {
@@ -21,7 +24,7 @@ public abstract class Editor implements InputProcessor {
     public Editor() {
         this.camera = new OrthographicCamera(1920, 1080);
         this.shapeRenderer = new ShapeRenderer();
-        this.stage = new Stage();
+        this.stage = new Stage(/*new ScalingViewport(Scaling.stretch, 1920, 1080, this.camera), new SpriteBatch()*/);
     }
     public void render(){
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
@@ -36,6 +39,7 @@ public abstract class Editor implements InputProcessor {
     public void resize(int width, int height){
         this.camera.setToOrtho(false, width, height);
         this.stage.getViewport().update(width, height);
+        // this.stage.getCamera().update();
     }
     public void dispose(){
         shapeRenderer.dispose();
