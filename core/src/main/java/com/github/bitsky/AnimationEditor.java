@@ -22,6 +22,8 @@ public class AnimationEditor extends Editor {
 
     private DedicatedKeyFrameWindow keyFramesWindow;
 
+    public SelectBox<EInterpolationFunction> functionSelectBox;
+
     public AnimationEditor(SpriteAnimation animation) {
         this.movingId = null;
         this.animation = animation;
@@ -37,12 +39,25 @@ public class AnimationEditor extends Editor {
     private void createUI() {
         Skin skin = new Skin(Gdx.files.internal("./skin/uiskin.json"));
 
+        functionSelectBox = new SelectBox<>(skin);
+        functionSelectBox.setItems(EInterpolationFunction.values());
+        functionSelectBox.setWidth(300);
+
+        this.stage.addActor(functionSelectBox);
+
         // ** create window **
         this.keyFramesWindow = new DedicatedKeyFrameWindow("Key Frames", this.animation, this);
         keyFramesWindow.setWidth(Gdx.graphics.getWidth());
         keyFramesWindow.setHeight(this.camera.viewportHeight / 5);
 
         this.stage.addActor(keyFramesWindow);
+
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        functionSelectBox.setPosition(0, height-functionSelectBox.getHeight());
+        super.resize(width, height);
     }
 
     @Override
@@ -75,7 +90,7 @@ public class AnimationEditor extends Editor {
             if(movingBone != null && movingBone.parent != null && (Gdx.input.getDeltaX() != 0 || Gdx.input.getDeltaY() != 0)) {
                 Transform parentTransform = transforms.get(movingBone.parent);
                 AnimationTrack track = animation.getTrack(movingId);
-                track.translations.addKeyframe(time, worldMouse.cpy().sub(parentTransform.translation).rotateRad(-parentTransform.rotation), EInterpolationFunction.Linear);
+                track.translations.addKeyframe(time, worldMouse.cpy().sub(parentTransform.translation).rotateRad(-parentTransform.rotation), functionSelectBox.getSelected());
                 playing = false;
             }
         }
@@ -102,11 +117,6 @@ public class AnimationEditor extends Editor {
         }
 
         stage.draw();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        super.resize(width, height);
     }
 
     @Override

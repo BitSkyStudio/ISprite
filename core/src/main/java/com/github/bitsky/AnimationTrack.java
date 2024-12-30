@@ -97,6 +97,11 @@ public class AnimationTrack {
         public void addKeyframe(float time, T value, EInterpolationFunction interpolationFunction){
             track.put(time, new ValueInterpolationPair<>(value, interpolationFunction));
         }
+
+        public HashMap<Float, ValueInterpolationPair<T>> getTrack() {
+            return track;
+        }
+
         public void modifyKeyframe(float time, float toTime){
             ValueInterpolationPair<T> v = this.track.get(time);
             if(v == null)

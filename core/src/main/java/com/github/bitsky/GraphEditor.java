@@ -398,4 +398,20 @@ public class GraphEditor extends Editor {
             throw new IllegalStateException("Implement");
         }
     }
+
+    @Override
+    public void resize(int width, int height) {
+        this.stage.getViewport().setWorldSize(width, width/16f*9);
+        super.resize(width, height);
+    }
+
+    @Override
+    public boolean scrolled(float v, float v1) {
+
+        /*this.stage.getViewport().update(
+            (int) (this.stage.getViewport().getScreenWidth() + v1 * 16),
+            (int) (this.stage.getViewport().getScreenHeight() + v1 * 9)
+        );*/
+        return super.scrolled(v, v1);
+    }
 }
