@@ -4,6 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -15,6 +16,8 @@ public class ISpriteMain extends ApplicationAdapter {
     public GraphEditor graphEditor;
 
     private Skin skin;
+
+    private Vector2 lastMouse;
     @Override
     public void create() {
         this.skin = new Skin(Gdx.files.internal("skin/uiskin.json"));
@@ -31,6 +34,7 @@ public class ISpriteMain extends ApplicationAdapter {
         this.editor = new BoneEditor();
         Gdx.input.setInputProcessor(this.editor);
         this.graphEditor = new GraphEditor();
+        this.lastMouse = new Vector2();
     }
 
     @Override
@@ -50,6 +54,7 @@ public class ISpriteMain extends ApplicationAdapter {
                 setEditor(new BoneEditor());
             }
         }
+        this.lastMouse = new Vector2(Gdx.input.getX(), Gdx.input.getY());
     }
     public void setEditor(Editor editor) {
         this.editor = editor;
@@ -72,6 +77,12 @@ public class ISpriteMain extends ApplicationAdapter {
         return (ISpriteMain) Gdx.app.getApplicationListener();
     }
     public static Skin getSkin(){
-        return ((ISpriteMain) Gdx.app.getApplicationListener()).skin;
+        return getInstance().skin;
+    }
+    public static float getMouseDeltaX(){
+        return Gdx.input.getX()-getInstance().lastMouse.x;
+    }
+    public static float getMouseDeltaY(){
+        return Gdx.input.getY()-getInstance().lastMouse.y;
     }
 }

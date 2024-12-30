@@ -54,7 +54,7 @@ public class AnimatedSpritePose {
             drawDebugBone(sprite, child, ownTransform, shapeRenderer, highlighter);
         }
     }
-    private static void drawArrow(ShapeRenderer shapeRenderer, Vector2 from, Vector2 to){
+    public static void drawArrow(ShapeRenderer shapeRenderer, Vector2 from, Vector2 to){
         shapeRenderer.line(from, to);
         Vector2 diff = to.cpy().sub(from);
         float angle = diff.angleRad();

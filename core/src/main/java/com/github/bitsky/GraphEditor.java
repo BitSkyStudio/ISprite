@@ -70,7 +70,7 @@ public class GraphEditor extends Editor {
     public void render() {
         super.render();
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
-            stage.getCamera().position.add(-Gdx.input.getDeltaX()*2f, Gdx.input.getDeltaY()*2f, 0);
+            stage.getCamera().position.add(-ISpriteMain.getMouseDeltaX(), ISpriteMain.getMouseDeltaY(), 0);
         }
         if(Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)){
             if(rightClickMenu != null)
@@ -361,36 +361,18 @@ public class GraphEditor extends Editor {
         }
     }
     public class StateGraphNode extends GraphNode {
+        public final AnimationStateMachine stateMachine;
         public StateGraphNode() {
-            super("State Machine", "Change output based on state. (Multiplexer)", true);
-
-            AtomicInteger values = new AtomicInteger(3);
-            this.window.add(new Label("Values: ", ISpriteMain.getSkin()));
-            TextField textField = new TextField(String.valueOf(values.get()), ISpriteMain.getSkin());
-            textField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
-            textField.setTextFieldListener((textField1, c) -> {
-                try {
-                    values.set(Integer.parseInt(textField1.getText()));
-                    this.inputs.clear();
-
-                    this.inputFields.values().forEach(Actor::remove);
-
-                    addInputs(values.get());
-                    this.window.pack();
-
-                } catch(NumberFormatException e){
-                    textField.setText(String.valueOf(values.get()));
+            super("State Machine", "Carries internal state.", true);
+            this.stateMachine = new AnimationStateMachine();
+            TextButton enterButton = new TextButton("Edit", ISpriteMain.getSkin());
+            enterButton.addListener(new ClickListener(){
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    ISpriteMain.getInstance().setEditor(new StateMachineEditor(stateMachine));
                 }
             });
-            this.window.add(textField);
-
-            addInputs(values.get());
-        }
-
-        public void addInputs(int len) {
-            for (int i = 0; i < len; i++) {
-                addInput("State" + i);
-            }
+            this.verticalGroup.addActor(enterButton);
         }
 
         @Override

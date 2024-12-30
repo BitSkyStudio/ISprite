@@ -147,7 +147,7 @@ public class BoneEditor extends Editor {
             }
         }
         if(Gdx.input.isKeyPressed(Input.Keys.N) && selectedImage != null){
-            selectedImage.transform.translation.add(Gdx.input.getDeltaX(), -Gdx.input.getDeltaY());
+            selectedImage.transform.translation.add(ISpriteMain.getMouseDeltaX(), -ISpriteMain.getMouseDeltaY());
         }
 
 

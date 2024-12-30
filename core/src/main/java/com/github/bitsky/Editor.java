@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Scaling;
@@ -34,7 +35,7 @@ public abstract class Editor implements InputProcessor {
     }
     public void render(){
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
-            camera.position.add(-Gdx.input.getDeltaX(), Gdx.input.getDeltaY(), 0);
+            camera.position.add(new Vector3(-ISpriteMain.getMouseDeltaX(), ISpriteMain.getMouseDeltaY(), 0));
         }
 
         shapeRenderer.setAutoShapeType(true);
