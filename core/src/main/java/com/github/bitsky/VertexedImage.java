@@ -85,7 +85,7 @@ public class VertexedImage {
         shapeRenderer.end();
         shapeRenderer.begin();
     }
-    public class Vertex{
+    public static class Vertex{
         public Vector2 position;
         public HashMap<UUID,Float> weights;
         public Vertex(Vector2 position, HashMap<UUID, Float> weights) {
