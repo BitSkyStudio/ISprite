@@ -94,7 +94,7 @@ public class VertexedImage {
         vec.prj(getTransformMatrix().inv());
         this.points.add(new Vertex(new Vector2(vec.x, vec.y), weights));
     }
-    private Matrix4 getTransformMatrix(){
+    public Matrix4 getTransformMatrix(){
         Matrix4 matrix = new Matrix4();
         matrix.translate(transform.translation.x + texture.getWidth()/2f, transform.translation.y + texture.getHeight()/2f, 0);
         matrix.rotateRad(Vector3.Z, transform.rotation);
@@ -120,21 +120,21 @@ public class VertexedImage {
         HashMap<UUID, Transform> defaultPositions = BoneEditor.EMPTY_POSE.getBoneTransforms(ISpriteMain.getInstance().sprite, new Transform().lock());
         HashMap<UUID, Transform> posePositions = pose.getBoneTransforms(ISpriteMain.getInstance().sprite, new Transform().lock());
 
+        Matrix4 transformMatrix = getTransformMatrix();
         for(int i = 0;i < points.size();i++){
-            Vector2 vertex = new Vector2(vertices[i*2], vertices[i*2+1]);
+            Vector3 vertex = new Vector3(vertices[i*2], vertices[i*2+1], 0);
+            vertex.prj(transformMatrix);
             Vector2 outputVertex = new Vector2();
             for(Map.Entry<UUID, Float> weightEntry : points.get(i).weights.entrySet()){
                 float angleDiff = posePositions.get(weightEntry.getKey()).rotation-defaultPositions.get(weightEntry.getKey()).rotation;
-                Vector2 positionDifference = vertex.cpy().sub(defaultPositions.get(weightEntry.getKey()).translation);
+                Vector2 positionDifference = new Vector2(vertex.x, vertex.y).sub(defaultPositions.get(weightEntry.getKey()).translation);
                 positionDifference.rotateRad(angleDiff);
                 outputVertex.add(positionDifference.add(posePositions.get(weightEntry.getKey()).translation).scl(weightEntry.getValue()));
             }
             vertices[i*2] = outputVertex.x;
             vertices[i*2+1] = outputVertex.y;
         }
-        polygonSpriteBatch.setTransformMatrix(getTransformMatrix());
         polygonSpriteBatch.draw(polygonRegion, 0, 0);
-        polygonSpriteBatch.setTransformMatrix(new Matrix4());
     }
     public void debugDraw(ShapeRenderer shapeRenderer){
         shapeRenderer.setTransformMatrix(getTransformMatrix());

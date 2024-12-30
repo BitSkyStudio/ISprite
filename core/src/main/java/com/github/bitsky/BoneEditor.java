@@ -3,6 +3,7 @@ package com.github.bitsky;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -134,8 +135,11 @@ public class BoneEditor extends Editor {
 
         if(Gdx.input.isKeyPressed(Input.Keys.B) && selectedImage != null){
             float speed = 0.5f * Gdx.graphics.getDeltaTime();
+            Matrix4 matrix = selectedImage.getTransformMatrix();
             for(VertexedImage.Vertex vertex : selectedImage.points) {
-                if(vertex.position.dst(worldMouse) > 10f)
+                Vector3 pos = new Vector3(vertex.position.x, vertex.position.y, 0);
+                pos.prj(matrix);
+                if(pos.dst(worldMouse3) > 10f)
                     continue;
                 if(!tree.getSelection().isEmpty()){
                     vertex.addWeight(tree.getSelection().getLastSelected().getValue().id, speed/tree.getSelection().size());
