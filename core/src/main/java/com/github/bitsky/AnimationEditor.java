@@ -77,7 +77,8 @@ public class AnimationEditor extends Editor {
         }
 
         polygonSpriteBatch.begin();
-        sprite.image.draw(polygonSpriteBatch, pose);
+        for(VertexedImage image : sprite.images)
+            image.draw(polygonSpriteBatch, pose);
         polygonSpriteBatch.end();
 
         shapeRenderer.begin();

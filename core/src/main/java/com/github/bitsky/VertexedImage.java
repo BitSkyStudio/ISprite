@@ -26,13 +26,16 @@ public class VertexedImage {
     public Texture texture;
     public ArrayList<Vertex> points;
     public Transform transform;
+    public String name;
     public VertexedImage(Texture texture) {
         this.texture = texture;
         this.points = new ArrayList<>();
         this.transform = new Transform().lock();
+        this.name = "image";
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();
+        json.put("name", name);
         if (!texture.getTextureData().isPrepared()) {
             texture.getTextureData().prepare();
         }
@@ -68,6 +71,7 @@ public class VertexedImage {
         return json;
     }
     public void load(JSONObject json){
+        this.name = json.getString("name");
         transform.load(json.getJSONObject("transform"));
         points.clear();
         for(Object vt : json.getJSONArray("points")){

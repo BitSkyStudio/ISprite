@@ -3,6 +3,7 @@ package com.github.bitsky;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -13,13 +14,14 @@ import java.util.UUID;
 public class AnimatedSprite {
     public final HashMap<UUID, AnimatedSpriteBone> bones;
     public AnimatedSpriteBone rootBone;
-    public VertexedImage image;
+    public ArrayList<VertexedImage> images;
     public AnimatedSprite() {
         this.bones = new HashMap<>();
         this.rootBone = new AnimatedSpriteBone(this, null);
         this.rootBone.name = "root";
         this.bones.put(this.rootBone.id, this.rootBone);
-        this.image = new VertexedImage(new Texture("libgdx.png"));
+        this.images = new ArrayList<>();
+        this.images.add(new VertexedImage(new Texture("libgdx.png")));
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();
@@ -29,6 +31,11 @@ public class AnimatedSprite {
         }
         json.put("bones", bones);
         json.put("root", rootBone.id.toString());
+        JSONArray imagesJson = new JSONArray();
+        for(VertexedImage image : images){
+            imagesJson.put(image.save());
+        }
+        json.put("images", imagesJson);
         return json;
     }
     public void load(JSONObject json){
@@ -41,6 +48,12 @@ public class AnimatedSprite {
             this.bones.put(bone.id, bone);
         }
         this.rootBone = this.bones.get(UUID.fromString(json.getString("root")));
+        this.images.clear();
+        for(Object im : json.getJSONArray("images")){
+            VertexedImage image = new VertexedImage(null);
+            image.load((JSONObject) im);
+            this.images.add(image);
+        }
     }
     public AnimatedSpriteBone addChildNodeTo(AnimatedSpriteBone parent){
         AnimatedSpriteBone spriteBone = new AnimatedSpriteBone(this, parent.id);

@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import java.util.*;
@@ -17,6 +18,7 @@ public class BoneEditor extends Editor {
     private Table boneHierarchyTable;
     private Tree<BoneNode,AnimatedSpriteBone> tree;
     private HashMap<UUID,BoneNode> boneNodes;
+    private List<VertexedImage> imageList;
 
     public BoneEditor() {
         this.movingId = null;
@@ -31,7 +33,15 @@ public class BoneEditor extends Editor {
         BoneNode root = new BoneNode(sprite.rootBone);
         tree.add(root);
         recurseAddHierarchy(root);
-        this.boneHierarchyTable.add(tree);
+        this.boneHierarchyTable.add(tree).row();
+        this.imageList = new List<>(ISpriteMain.getSkin()){
+            @Override
+            public String toString(VertexedImage object) {
+                return object.name;
+            }
+        };
+        boneHierarchyTable.add(imageList).row();
+        imageList.setItems(sprite.images.toArray(VertexedImage[]::new));
     }
     private void recurseAddHierarchy(BoneNode node){
         boneNodes.put(node.getValue().id, node);
@@ -90,11 +100,15 @@ public class BoneEditor extends Editor {
         super.render();
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
 
+        VertexedImage selectedImage = imageList.getSelected();
+
         spriteBatch.begin();
-        sprite.image.drawPreview(spriteBatch);
+        if(selectedImage != null)
+            selectedImage.drawPreview(spriteBatch);
         spriteBatch.end();
         polygonSpriteBatch.begin();
-        sprite.image.draw(polygonSpriteBatch, EMPTY_POSE);
+        for(VertexedImage image : sprite.images)
+            image.draw(polygonSpriteBatch, EMPTY_POSE);
         polygonSpriteBatch.end();
 
         HashMap<UUID, Transform> transforms = EMPTY_POSE.getBoneTransforms(sprite, new Transform().lock());
@@ -110,16 +124,17 @@ public class BoneEditor extends Editor {
         shapeRenderer.begin();
         UUID finalMoused = moused;
         EMPTY_POSE.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)? Color.RED:(tree.getSelection().contains(boneNodes.get(uuid))?Color.BLUE:Color.GREEN));
-        sprite.image.debugDraw(shapeRenderer);
+        if(selectedImage != null)
+            selectedImage.debugDraw(shapeRenderer);
         shapeRenderer.end();
 
-        if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
-            sprite.image.addPoint(worldMouse.cpy(), sprite.rootBone);
+        if(Gdx.input.isKeyJustPressed(Input.Keys.V) && selectedImage != null){
+            selectedImage.addPoint(worldMouse.cpy(), sprite.rootBone);
         }
 
-        if(Gdx.input.isKeyPressed(Input.Keys.B)){
+        if(Gdx.input.isKeyPressed(Input.Keys.B) && selectedImage != null){
             float speed = 0.5f * Gdx.graphics.getDeltaTime();
-            for(VertexedImage.Vertex vertex : sprite.image.points) {
+            for(VertexedImage.Vertex vertex : selectedImage.points) {
                 if(vertex.position.dst(worldMouse) > 10f)
                     continue;
                 if(!tree.getSelection().isEmpty()){
@@ -127,8 +142,8 @@ public class BoneEditor extends Editor {
                 }
             }
         }
-        if(Gdx.input.isKeyPressed(Input.Keys.N)){
-            sprite.image.transform.translation.add(Gdx.input.getDeltaX(), -Gdx.input.getDeltaY());
+        if(Gdx.input.isKeyPressed(Input.Keys.N) && selectedImage != null){
+            selectedImage.transform.translation.add(Gdx.input.getDeltaX(), -Gdx.input.getDeltaY());
         }
 
 
@@ -172,7 +187,8 @@ public class BoneEditor extends Editor {
             return true;
         }
         if(Gdx.input.isKeyPressed(Input.Keys.N)){
-            ISpriteMain.getInstance().sprite.image.transform.rotation -= v1/10f;
+            if(imageList.getSelected() != null)
+                imageList.getSelected().transform.rotation -= v1/10f;
         }
         return super.scrolled(v, v1);
     }
