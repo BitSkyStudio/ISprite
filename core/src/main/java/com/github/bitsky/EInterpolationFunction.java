@@ -18,7 +18,10 @@ public enum EInterpolationFunction {
     Fade(10, "Fade", Interpolation.fade::apply),
     SwingIn(11, "SwingIn", Interpolation.swingIn::apply),
     SwingOut(12, "SwingOut", Interpolation.swingOut::apply),
-    Swing(13, "Swing", Interpolation.swing::apply);
+    Swing(13, "Swing", Interpolation.swing::apply),
+    Exp5(14, "Exp5", Interpolation.exp5::apply),
+    Exp5In(15, "Exp5In", Interpolation.exp5In::apply),
+    Exp5Out(16, "Exp5Out", Interpolation.exp5Out::apply);
 
     public byte id;
     public String name;

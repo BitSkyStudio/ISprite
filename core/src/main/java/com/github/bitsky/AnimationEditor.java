@@ -23,6 +23,7 @@ public class AnimationEditor extends Editor {
     private DedicatedKeyFrameWindow keyFramesWindow;
 
     public SelectBox<EInterpolationFunction> functionSelectBox;
+    public Label functionSelectLabel;
 
     public AnimationEditor(SpriteAnimation animation) {
         this.movingId = null;
@@ -44,6 +45,9 @@ public class AnimationEditor extends Editor {
         functionSelectBox.setWidth(300);
 
         this.stage.addActor(functionSelectBox);
+        functionSelectLabel = new Label("Int. function of current keyframe", skin);
+
+        this.stage.addActor(functionSelectLabel);
 
         // ** create window **
         this.keyFramesWindow = new DedicatedKeyFrameWindow("Key Frames", this.animation, this);
@@ -56,7 +60,8 @@ public class AnimationEditor extends Editor {
 
     @Override
     public void resize(int width, int height) {
-        functionSelectBox.setPosition(0, height-functionSelectBox.getHeight());
+        functionSelectLabel.setPosition(0, height-functionSelectLabel.getHeight());
+        functionSelectBox.setPosition(0, height-functionSelectBox.getHeight() - 20);
         super.resize(width, height);
     }
 

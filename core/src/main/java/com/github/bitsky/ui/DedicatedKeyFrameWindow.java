@@ -60,6 +60,7 @@ public class DedicatedKeyFrameWindow extends Window {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
+        this.setHeight(this.keyframeRows.size()*KeyframeRow.HEIGHT + 30);
     }
 
     private void addKeyFrameRow(KeyframeRow keyframeRow) {

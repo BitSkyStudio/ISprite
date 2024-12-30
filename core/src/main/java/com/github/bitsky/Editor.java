@@ -34,8 +34,9 @@ public abstract class Editor implements InputProcessor {
     }
     public void render(){
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
-            camera.position.add(-Gdx.input.getDeltaX()*2f, Gdx.input.getDeltaY()*2f, 0);
+            camera.position.add(-Gdx.input.getDeltaX(), Gdx.input.getDeltaY(), 0);
         }
+
         shapeRenderer.setAutoShapeType(true);
         camera.update();
         shapeRenderer.setProjectionMatrix(camera.combined);
@@ -44,14 +45,6 @@ public abstract class Editor implements InputProcessor {
 
         stage.act();
         stage.draw();
-
-        /*
-        shapeRenderer.begin();
-        shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(Color.RED);
-        shapeRenderer.line(0, 0, 1, Gdx.graphics.getHeight() + camera.position.y);
-        shapeRenderer.end();
-        shapeRenderer.flush();*/
     }
     public void resize(int width, int height){
         this.camera.setToOrtho(false, width, height);
