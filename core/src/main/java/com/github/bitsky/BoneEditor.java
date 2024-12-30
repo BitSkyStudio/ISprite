@@ -91,11 +91,10 @@ public class BoneEditor extends Editor {
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
 
         spriteBatch.begin();
-        spriteBatch.setColor(1f, 1f, 1f, 0.3f);
-        spriteBatch.draw(sprite.image.texture, 0, 0);
+        sprite.image.drawPreview(spriteBatch);
         spriteBatch.end();
         polygonSpriteBatch.begin();
-        sprite.image.draw(polygonSpriteBatch, 0, 0, EMPTY_POSE);
+        sprite.image.draw(polygonSpriteBatch, EMPTY_POSE);
         polygonSpriteBatch.end();
 
         HashMap<UUID, Transform> transforms = EMPTY_POSE.getBoneTransforms(sprite, new Transform().lock());
@@ -111,7 +110,7 @@ public class BoneEditor extends Editor {
         shapeRenderer.begin();
         UUID finalMoused = moused;
         EMPTY_POSE.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)? Color.RED:(tree.getSelection().contains(boneNodes.get(uuid))?Color.BLUE:Color.GREEN));
-        sprite.image.debugDraw(shapeRenderer, 0, 0);
+        sprite.image.debugDraw(shapeRenderer);
         shapeRenderer.end();
 
         if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
@@ -127,6 +126,9 @@ public class BoneEditor extends Editor {
                     vertex.addWeight(tree.getSelection().getLastSelected().getValue().id, speed/tree.getSelection().size());
                 }
             }
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.N)){
+            sprite.image.transform.translation.add(Gdx.input.getDeltaX(), -Gdx.input.getDeltaY());
         }
 
 
@@ -168,6 +170,9 @@ public class BoneEditor extends Editor {
                 movingBone.baseTransform.rotation -= v1/10f;
             }
             return true;
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.N)){
+            ISpriteMain.getInstance().sprite.image.transform.rotation -= v1/10f;
         }
         return super.scrolled(v, v1);
     }

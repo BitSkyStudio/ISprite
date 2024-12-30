@@ -76,7 +76,7 @@ public class AnimationEditor extends Editor {
         }
 
         polygonSpriteBatch.begin();
-        sprite.image.draw(polygonSpriteBatch, 0, 0, pose);
+        sprite.image.draw(polygonSpriteBatch, pose);
         polygonSpriteBatch.end();
 
         shapeRenderer.begin();
