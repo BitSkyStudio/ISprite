@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -33,13 +34,15 @@ public abstract class Editor implements InputProcessor {
     }
     public void render(){
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
-            camera.position.add(-Gdx.input.getDeltaX()*2f, Gdx.input.getDeltaY()*2f, 0);
+            camera.position.add(-Gdx.input.getDeltaX(), Gdx.input.getDeltaY(), 0);
         }
+
         shapeRenderer.setAutoShapeType(true);
         camera.update();
         shapeRenderer.setProjectionMatrix(camera.combined);
         polygonSpriteBatch.setProjectionMatrix(camera.combined);
         spriteBatch.setProjectionMatrix(camera.combined);
+
         stage.act();
         stage.draw();
     }

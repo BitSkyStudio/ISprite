@@ -8,14 +8,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Event;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.ui.Cell;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.Array;
 import com.github.bitsky.AnimationEditor;
 import com.github.bitsky.AnimationTrack;
 import com.github.bitsky.ISpriteMain;
@@ -23,6 +16,7 @@ import com.github.bitsky.SpriteAnimation;
 
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.Math.round;
 
@@ -66,6 +60,7 @@ public class DedicatedKeyFrameWindow extends Window {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
+        this.setHeight(this.keyframeRows.size()*KeyframeRow.HEIGHT + 30);
     }
 
     private void addKeyFrameRow(KeyframeRow keyframeRow) {
@@ -122,6 +117,11 @@ public class DedicatedKeyFrameWindow extends Window {
         public void draw(ShapeRenderer shapeRenderer, float x, float y) {
             shapeRenderer.setColor(mouseColliding() ? Color.valueOf("CE78AD") : Color.valueOf("893168"));
             shapeRenderer.circle(x + time * TIME_SUB_DIVISION, y + 20, 10);
+
+            if (this.equals(lastSelectedMarker)) {
+                shapeRenderer.setColor(Color.ORANGE);
+                shapeRenderer.rect(x + time * TIME_SUB_DIVISION - 5, y+20 - 5, 10, 10);
+            }
 
             this.parentX = x;
             this.parentY = y;
@@ -204,6 +204,18 @@ public class DedicatedKeyFrameWindow extends Window {
                     animationEditor.playing = false;
                 }
             }
+
+            if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
+                AtomicReference<KeyframeMarker> toRemove = new AtomicReference<>();
+                this.markers.forEach(marker -> {
+                    if (marker.mouseColliding()) {
+                        this.propertyTrack.getTrack().remove(marker.time);
+                        toRemove.set(marker);
+                    }
+                });
+                this.markers.remove(toRemove.get());
+            }
+
             this.mouseHovering = true;
             return super.hit(x, y, touchable);
         }
