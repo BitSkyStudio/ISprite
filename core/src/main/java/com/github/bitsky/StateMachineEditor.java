@@ -32,7 +32,8 @@ public class StateMachineEditor extends Editor{
             for(AnimationStateMachine.StateTransition transition : state.transitions){
                 AnimationStateMachine.State targetState = stateMachine.states.get(transition.target);
                 Vector2 diff = targetState.position.cpy().sub(state.position).setLength(radius*1.05f);
-                AnimatedSpritePose.drawArrow(shapeRenderer, diff.cpy().add(state.position), targetState.position.cpy().sub(diff));
+                Vector2 perpShift = diff.cpy().rotate90(1).setLength(10);
+                AnimatedSpritePose.drawArrow(shapeRenderer, diff.cpy().add(state.position).add(perpShift), targetState.position.cpy().sub(diff).add(perpShift), 20);
             }
             if(worldMouse.dst(state.position) < radius){
                 if(Gdx.input.isKeyJustPressed(Input.Keys.R)){

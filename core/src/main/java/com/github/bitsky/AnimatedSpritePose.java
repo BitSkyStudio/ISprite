@@ -47,20 +47,19 @@ public class AnimatedSpritePose {
         shapeRenderer.setColor(Color.YELLOW);
         shapeRenderer.line(transform.translation, ownTransform.translation);
         shapeRenderer.setColor(highlighter.apply(bone.id));
-        drawArrow(shapeRenderer, ownTransform.translation, ownTransform.translation.cpy().add(new Vector2(0, ownTransform.scale*100).rotateRad(ownTransform.rotation)));
+        drawArrow(shapeRenderer, ownTransform.translation, ownTransform.translation.cpy().add(new Vector2(0, ownTransform.scale*100).rotateRad(ownTransform.rotation)), ownTransform.scale*100/3);
         //shapeRenderer.setColor(Color.WHITE);
         for(UUID childId : bone.children){
             AnimatedSpriteBone child = sprite.bones.get(childId);
             drawDebugBone(sprite, child, ownTransform, shapeRenderer, highlighter);
         }
     }
-    public static void drawArrow(ShapeRenderer shapeRenderer, Vector2 from, Vector2 to){
+    public static void drawArrow(ShapeRenderer shapeRenderer, Vector2 from, Vector2 to, float size){
         shapeRenderer.line(from, to);
         Vector2 diff = to.cpy().sub(from);
         float angle = diff.angleRad();
-        float length = diff.len();
-        shapeRenderer.line(to, to.cpy().add(new Vector2(length/3f, 0).rotateRad((float) (angle+Math.PI+Math.PI/6))));
-        shapeRenderer.line(to, to.cpy().add(new Vector2(length/3f, 0).rotateRad((float) (angle+Math.PI-Math.PI/6))));
+        shapeRenderer.line(to, to.cpy().add(new Vector2(size, 0).rotateRad((float) (angle+Math.PI+Math.PI/6))));
+        shapeRenderer.line(to, to.cpy().add(new Vector2(size, 0).rotateRad((float) (angle+Math.PI-Math.PI/6))));
     }
     public HashMap<UUID,Transform> getBoneTransforms(AnimatedSprite sprite, Transform transform){
         HashMap<UUID,Transform> transforms = new HashMap<>();
