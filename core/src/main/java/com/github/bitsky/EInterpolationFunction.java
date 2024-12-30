@@ -1,9 +1,14 @@
 package com.github.bitsky;
 
+import com.badlogic.gdx.math.Interpolation;
+
 import java.util.function.Function;
 
 public enum EInterpolationFunction {
-    Linear(0, "Linear", (f) -> f);
+    Linear(0, "Linear", (f) -> f),
+    CircleIn(1, "CircleIn", Interpolation.circleIn::apply),
+    CircleOut(2, "CircleOut", Interpolation.circleOut::apply),
+    Circle(3, "Circle", Interpolation.circle::apply);
     public byte id;
     public String name;
     public Function<Float,Float> function;

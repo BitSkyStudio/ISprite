@@ -182,6 +182,8 @@ public class DedicatedKeyFrameWindow extends Window {
                 this.markers.forEach(marker -> {
                     if (marker.mouseColliding())
                         this.mouseDragMarker = marker;
+
+                    animationEditor.functionSelectBox.setSelected(this.propertyTrack.getTrack().get(marker.time).interpolationFunction);
                 });
                 if(this.mouseDragMarker == null){
                     animationEditor.time = (x - (this.getParent().getX() + getX() + 200)) / TIME_SUB_DIVISION;
