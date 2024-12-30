@@ -116,6 +116,7 @@ public class BoneEditor extends Editor {
         if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
             sprite.image.addPoint(worldMouse.cpy(), sprite.rootBone);
         }
+
         if(Gdx.input.isKeyPressed(Input.Keys.B)){
             float speed = 0.5f * Gdx.graphics.getDeltaTime();
             for(VertexedImage.Vertex vertex : sprite.image.points) {

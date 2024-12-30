@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public class GraphEditor extends Editor {
@@ -48,6 +49,7 @@ public class GraphEditor extends Editor {
         nodeTypes.put("Blend Pose", BlendPoseGraphNode::new);
         nodeTypes.put("Multiply Pose", MultiplyPoseGraphNode::new);
         nodeTypes.put("Add Pose", AddPoseGraphNode::new);
+        nodeTypes.put("State Machine", StateGraphNode::new);
     }
 
     public void removeNode(GraphNode node) {
@@ -139,6 +141,7 @@ public class GraphEditor extends Editor {
         public final HashMap<String,UUID> inputs;
         public final HashMap<String,Actor> inputActors;
         public final HashMap<String, TextureRegion> inputRegions;
+        public final HashMap<String, HorizontalGroup> inputFields;
         public Actor outputActor;
 
         public final VerticalGroup verticalGroup;
@@ -146,7 +149,9 @@ public class GraphEditor extends Editor {
         public GraphNode(String name, String description, boolean removable) {
             this.id = UUID.randomUUID();
             this.window = new Window(name, ISpriteMain.getSkin());
+            this.window.setKeepWithinStage(false);
 
+            this.inputFields = new HashMap<>();
             this.inputRegions = new HashMap<>();
             this.inputs = new HashMap<>();
             this.inputActors = new HashMap<>();
@@ -222,7 +227,8 @@ public class GraphEditor extends Editor {
 
         public void addInput(String name) {
             HorizontalGroup hgroup = new HorizontalGroup();
-
+            this.inputFields.put(name, hgroup);
+            hgroup.setName(name);
             TextureRegion textureRegion = new TextureRegion(linkInputTexture);
             Actor dragInput = new Image(textureRegion);
             this.inputRegions.put(name, textureRegion);
@@ -352,6 +358,44 @@ public class GraphEditor extends Editor {
         @Override
         public AnimatedSpritePose getOutputPose() {
             return getInput("Pose1").add(getInput("Pose2"));
+        }
+    }
+    public class StateGraphNode extends GraphNode {
+        public StateGraphNode() {
+            super("State Machine", "Change output based on state. (Multiplexer)", true);
+
+            AtomicInteger values = new AtomicInteger(3);
+            this.window.add(new Label("Values: ", ISpriteMain.getSkin()));
+            TextField textField = new TextField(String.valueOf(values.get()), ISpriteMain.getSkin());
+            textField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            textField.setTextFieldListener((textField1, c) -> {
+                try {
+                    values.set(Integer.parseInt(textField1.getText()));
+                    this.inputs.clear();
+
+                    this.inputFields.values().forEach(Actor::remove);
+
+                    addInputs(values.get());
+                    this.window.pack();
+
+                } catch(NumberFormatException e){
+                    textField.setText(String.valueOf(values.get()));
+                }
+            });
+            this.window.add(textField);
+
+            addInputs(values.get());
+        }
+
+        public void addInputs(int len) {
+            for (int i = 0; i < len; i++) {
+                addInput("State" + i);
+            }
+        }
+
+        @Override
+        public AnimatedSpritePose getOutputPose() {
+            throw new IllegalStateException("Implement");
         }
     }
 }
