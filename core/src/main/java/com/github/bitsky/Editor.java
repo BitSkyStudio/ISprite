@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -40,8 +41,17 @@ public abstract class Editor implements InputProcessor {
         shapeRenderer.setProjectionMatrix(camera.combined);
         polygonSpriteBatch.setProjectionMatrix(camera.combined);
         spriteBatch.setProjectionMatrix(camera.combined);
+
         stage.act();
         stage.draw();
+
+        /*
+        shapeRenderer.begin();
+        shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.RED);
+        shapeRenderer.line(0, 0, 1, Gdx.graphics.getHeight() + camera.position.y);
+        shapeRenderer.end();
+        shapeRenderer.flush();*/
     }
     public void resize(int width, int height){
         this.camera.setToOrtho(false, width, height);
