@@ -9,9 +9,11 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Cell;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.github.bitsky.AnimationEditor;
@@ -34,6 +36,8 @@ public class DedicatedKeyFrameWindow extends Window {
 
     private float animationStepTime;
 
+    private KeyframeMarker lastSelectedMarker;
+
     public DedicatedKeyFrameWindow(String title, SpriteAnimation animation, AnimationEditor animationEditor) {
         super(title, ISpriteMain.getSkin());
         this.spriteAnimation = animation;
@@ -42,7 +46,15 @@ public class DedicatedKeyFrameWindow extends Window {
         this.left();
 
         this.animationEditor = animationEditor;
-/*
+        this.animationEditor.functionSelectBox.addListener((event) -> {
+            if (lastSelectedMarker == null) {
+                return false;
+            }
+
+            lastSelectedMarker.keyframeRow.propertyTrack.getTrack().get(lastSelectedMarker.time).interpolationFunction = animationEditor.functionSelectBox.getSelected();
+            return false;
+        });
+        /*
         AnimationTrack.PropertyTrack<Float> propertyTrack = new AnimationTrack.PropertyTrack<>((first, second, t) -> second);
         propertyTrack.addKeyframe(0, 3f);
         propertyTrack.addKeyframe(3, 3f);
@@ -179,11 +191,13 @@ public class DedicatedKeyFrameWindow extends Window {
         @Override
         public Actor hit(float x, float y, boolean touchable) {
             if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                lastSelectedMarker = null;
                 this.markers.forEach(marker -> {
-                    if (marker.mouseColliding())
+                    if (marker.mouseColliding()) {
                         this.mouseDragMarker = marker;
-
-                    animationEditor.functionSelectBox.setSelected(this.propertyTrack.getTrack().get(marker.time).interpolationFunction);
+                        lastSelectedMarker = marker;
+                        animationEditor.functionSelectBox.setSelected(this.propertyTrack.getTrack().get(marker.time).interpolationFunction);
+                    }
                 });
                 if(this.mouseDragMarker == null){
                     animationEditor.time = (x - (this.getParent().getX() + getX() + 200)) / TIME_SUB_DIVISION;

@@ -42,6 +42,7 @@ public class AnimationEditor extends Editor {
         functionSelectBox = new SelectBox<>(skin);
         functionSelectBox.setItems(EInterpolationFunction.values());
         functionSelectBox.setWidth(300);
+
         this.stage.addActor(functionSelectBox);
 
         // ** create window **
