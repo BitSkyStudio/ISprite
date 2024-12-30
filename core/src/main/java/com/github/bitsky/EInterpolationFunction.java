@@ -14,7 +14,11 @@ public enum EInterpolationFunction {
     BounceOut(6, "Bounce", Interpolation.bounceOut::apply),
     Elastic(7, "Elastic", Interpolation.elastic::apply),
     ElasticIn(8, "ElasticIn", Interpolation.elasticIn::apply),
-    ElasticOut(9, "ElasticOut", Interpolation.elasticOut::apply);
+    ElasticOut(9, "ElasticOut", Interpolation.elasticOut::apply),
+    Fade(10, "Fade", Interpolation.fade::apply),
+    SwingIn(11, "SwingIn", Interpolation.swingIn::apply),
+    SwingOut(12, "SwingOut", Interpolation.swingOut::apply),
+    Swing(13, "Swing", Interpolation.swing::apply);
 
     public byte id;
     public String name;

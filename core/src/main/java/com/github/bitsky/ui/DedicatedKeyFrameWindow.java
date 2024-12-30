@@ -117,6 +117,11 @@ public class DedicatedKeyFrameWindow extends Window {
             shapeRenderer.setColor(mouseColliding() ? Color.valueOf("CE78AD") : Color.valueOf("893168"));
             shapeRenderer.circle(x + time * TIME_SUB_DIVISION, y + 20, 10);
 
+            if (this.equals(lastSelectedMarker)) {
+                shapeRenderer.setColor(Color.ORANGE);
+                shapeRenderer.rect(x + time * TIME_SUB_DIVISION - 5, y+20 - 5, 10, 10);
+            }
+
             this.parentX = x;
             this.parentY = y;
         }
