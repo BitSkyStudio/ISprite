@@ -1,6 +1,8 @@
 package com.github.bitsky;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.PolygonRegion;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
@@ -12,20 +14,74 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ShortArray;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.*;
 
 public class VertexedImage {
-    public final Texture texture;
+    public Texture texture;
     public ArrayList<Vertex> points;
     public Transform transform;
     public VertexedImage(Texture texture) {
         this.texture = texture;
         this.points = new ArrayList<>();
         this.transform = new Transform().lock();
+    }
+    public JSONObject save(){
+        JSONObject json = new JSONObject();
+        if (!texture.getTextureData().isPrepared()) {
+            texture.getTextureData().prepare();
+        }
+        Pixmap pixmap = texture.getTextureData().consumePixmap();
+        PixmapIO.PNG writer = new PixmapIO.PNG((int)((float)(pixmap.getWidth() * pixmap.getHeight()) * 1.5F));
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            writer.setFlipY(false);
+            writer.setCompression(-1);
+            writer.write(new BufferedOutputStream(outputStream), pixmap);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            writer.dispose();
+        }
+        json.put("texture", Base64.getEncoder().encode(outputStream.toByteArray()));
+        json.put("transform", transform.save());
+        JSONArray vertices = new JSONArray();
+        for(Vertex vertex : points){
+            JSONObject point = new JSONObject();
+            JSONObject position = new JSONObject();
+            position.put("x", vertex.position.x);
+            position.put("y", vertex.position.y);
+            point.put("position", position);
+            JSONObject weights = new JSONObject();
+            for(Map.Entry<UUID, Float> entry : vertex.weights.entrySet()){
+                weights.put(entry.getKey().toString(), entry.getValue());
+            }
+            point.put("weights", weights);
+            vertices.put(point);
+        }
+        json.put("points", vertices);
+        return json;
+    }
+    public void load(JSONObject json){
+        transform.load(json.getJSONObject("transform"));
+        points.clear();
+        for(Object vt : json.getJSONArray("points")){
+            JSONObject vertexJson = (JSONObject) vt;
+            HashMap<UUID, Float> weights = new HashMap<>();
+            JSONObject weightsJson = vertexJson.getJSONObject("weights");
+            for(String key : weightsJson.keySet()){
+                weights.put(UUID.fromString(key), weightsJson.getFloat(key));
+            }
+            JSONObject position = vertexJson.getJSONObject("position");
+            points.add(new Vertex(new Vector2(position.getFloat("x"), position.getFloat("y")), weights));
+        }
+        byte[] textureBytes = Base64.getDecoder().decode(json.getString("texture"));
+        this.texture = new Texture(new Pixmap(textureBytes, 0, textureBytes.length));
     }
     public void addPoint(Vector2 position, AnimatedSpriteBone bone){
         HashMap<UUID,Float> weights = new HashMap<>();
