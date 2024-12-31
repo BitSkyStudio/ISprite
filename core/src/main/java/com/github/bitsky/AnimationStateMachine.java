@@ -29,9 +29,6 @@ public class AnimationStateMachine {
         }
 
         public void addTransition(State other) {
-            for(StateTransition transition : transitions)
-                if(transition.target == other.id)
-                    return;
             this.transitions.add(new StateTransition(other.id));
         }
     }

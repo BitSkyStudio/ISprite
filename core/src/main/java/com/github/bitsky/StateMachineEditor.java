@@ -5,11 +5,13 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 public class StateMachineEditor extends Editor{
@@ -28,14 +30,25 @@ public class StateMachineEditor extends Editor{
         shapeRenderer.begin();
         float radius = 50;
         for(AnimationStateMachine.State state : stateMachine.states.values()){
-            shapeRenderer.circle(state.position.x, state.position.y, radius);
+            HashMap<UUID,Integer> offsets = new HashMap<>();
             for(AnimationStateMachine.StateTransition transition : state.transitions){
                 AnimationStateMachine.State targetState = stateMachine.states.get(transition.target);
                 Vector2 diff = targetState.position.cpy().sub(state.position).setLength(radius*1.05f);
-                Vector2 perpShift = diff.cpy().rotate90(1).setLength(10);
-                AnimatedSpritePose.drawArrow(shapeRenderer, diff.cpy().add(state.position).add(perpShift), targetState.position.cpy().sub(diff).add(perpShift), 20);
+                int offset = offsets.getOrDefault(transition.target, 0);
+                float arrowSize = 10;
+                Vector2 perpShift = diff.cpy().rotate90(1).setLength(arrowSize*(0.5f+offset));
+                Vector2 first = diff.cpy().add(state.position).add(perpShift);
+                Vector2 second = targetState.position.cpy().sub(diff).add(perpShift);
+                if(Intersector.distanceSegmentPoint(first, second, worldMouse) < arrowSize/2){
+                    shapeRenderer.setColor(Color.RED);
+                } else {
+                    shapeRenderer.setColor(Color.WHITE);
+                }
+                AnimatedSpritePose.drawArrow(shapeRenderer, first, second, arrowSize);
+                offsets.put(transition.target, offset+1);
             }
             if(worldMouse.dst(state.position) < radius){
+                shapeRenderer.setColor(Color.RED);
                 if(Gdx.input.isKeyJustPressed(Input.Keys.R)){
                     TextField input = new TextField(state.name, ISpriteMain.getSkin());
                     Dialog dialog = new Dialog("Enter new name", ISpriteMain.getSkin(), "dialog") {
@@ -63,7 +76,10 @@ public class StateMachineEditor extends Editor{
                         original.addTransition(state);
                     }
                 }
+            } else {
+                shapeRenderer.setColor(Color.WHITE);
             }
+            shapeRenderer.circle(state.position.x, state.position.y, radius);
         }
         shapeRenderer.end();
         spriteBatch.begin();
