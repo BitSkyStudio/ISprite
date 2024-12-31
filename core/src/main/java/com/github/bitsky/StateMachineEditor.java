@@ -58,7 +58,7 @@ public class StateMachineEditor extends Editor{
                     connecting = state.id;
                 }
                 if(!Gdx.input.isKeyPressed(Input.Keys.T)){
-                    if(connecting != null && !connecting.equals(state)){
+                    if(connecting != null && !connecting.equals(state.id)){
                         AnimationStateMachine.State original = stateMachine.states.get(connecting);
                         original.addTransition(state);
                     }
