@@ -322,15 +322,15 @@ public class GraphEditor extends Editor {
                     ISpriteMain.getInstance().setEditor(new AnimationEditor(animation));
                 }
             });
-            CheckBox checkBox = new CheckBox("loop", ISpriteMain.getSkin());
-            checkBox.setChecked(isLooping);
-            checkBox.addListener(new ChangeListener() {
+            CheckBox loopingCheckBox = new CheckBox("loop", ISpriteMain.getSkin());
+            loopingCheckBox.setChecked(isLooping);
+            loopingCheckBox.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent changeEvent, Actor actor) {
-                    isLooping = checkBox.isChecked();
+                    isLooping = loopingCheckBox.isChecked();
                 }
             });
-
+            this.verticalGroup.addActor(loopingCheckBox);
             this.verticalGroup.addActor(enterButton);
         }
 
@@ -341,7 +341,8 @@ public class GraphEditor extends Editor {
         @Override
         public void tick(float step) {
             time += step;
-            time %= animation.getAnimationLength();
+            if(isLooping)
+                time %= animation.getAnimationLength();
         }
         @Override
         public boolean isFinished() {
