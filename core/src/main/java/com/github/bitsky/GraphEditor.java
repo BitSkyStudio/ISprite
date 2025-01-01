@@ -31,6 +31,7 @@ public class GraphEditor extends Editor {
     private float time;
     private Table rightClickMenu;
     private HashMap<String, Supplier<GraphNode>> nodeTypes;
+    private HashMap<UUID,InputProperty> properties;
 
     public GraphEditor() {
         this.linkInputTexture = new Texture("link_input.png");
@@ -41,6 +42,8 @@ public class GraphEditor extends Editor {
         this.nodes = new HashMap<>();
 
         addNode(new FinalPoseGraphNode(), Vector2.Zero);
+
+        this.properties = new HashMap<>();
 
         rightClickMenu = null;
 
@@ -395,5 +398,17 @@ public class GraphEditor extends Editor {
             (int) (this.stage.getViewport().getScreenHeight() + v1 * 9)
         );*/
         return super.scrolled(v, v1);
+    }
+    public class InputProperty{
+        public UUID id;
+        public String name;
+        public float value;
+        public Float resetValue;
+        public InputProperty() {
+            this.id = UUID.randomUUID();
+            this.name = "property";
+            this.value = 0;
+            this.resetValue = null;
+        }
     }
 }

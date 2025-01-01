@@ -9,33 +9,14 @@ import java.util.UUID;
 public class AnimationStateMachine {
     public final HashMap<UUID,State> states;
     public UUID startState;
-    public final HashMap<UUID,InputProperty> properties;
     public AnimationStateMachine() {
         this.states = new HashMap<>();
         this.startState = addState(new Vector2()).id;
-        this.properties = new HashMap<>();
     }
-
     public State addState(Vector2 position){
         State state = new State("State", position);
         this.states.put(state.id, state);
         return state;
-    }
-    public void addProperty(){
-        InputProperty property = new InputProperty();
-        this.properties.put(property.id, property);
-    }
-    public class InputProperty{
-        public UUID id;
-        public String name;
-        public float value;
-        public Float resetValue;
-        public InputProperty() {
-            this.id = UUID.randomUUID();
-            this.name = "property";
-            this.value = 0;
-            this.resetValue = null;
-        }
     }
     public class State{
         public final UUID id;
@@ -59,10 +40,53 @@ public class AnimationStateMachine {
         public final UUID target;
         public final float blendTime;
         public final EInterpolationFunction interpolationFunction;
+        public final ArrayList<TransitionCondition> conditions;
+        public boolean requireFinished;
         public StateTransition(UUID target) {
             this.target = target;
             this.blendTime = 0.2f;
             this.interpolationFunction = EInterpolationFunction.Linear;
+            this.conditions = new ArrayList<>();
+            this.requireFinished = false;
+        }
+    }
+    public static class TransitionCondition{
+        public final UUID propertyId;
+        public final float value;
+        public final EComparator comparator;
+        public TransitionCondition(UUID propertyId, float value, EComparator comparator) {
+            this.propertyId = propertyId;
+            this.value = value;
+            this.comparator = comparator;
+        }
+    }
+    public enum EComparator{
+        Equal("=="),
+        NotEqual("!="),
+        Less("<"),
+        More(">"),
+        LessEqual("<="),
+        MoreEqual(">=");
+        public final String display;
+        EComparator(String display) {
+            this.display = display;
+        }
+        public boolean passes(float a, float b){
+            switch(this){
+                case Equal:
+                    return a == b;
+                case NotEqual:
+                    return a != b;
+                case Less:
+                    return a < b;
+                case More:
+                    return a > b;
+                case LessEqual:
+                    return a <= b;
+                case MoreEqual:
+                    return a >= b;
+            }
+            throw new IllegalStateException("unreachable");
         }
     }
 }
