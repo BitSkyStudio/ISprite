@@ -42,7 +42,11 @@ public class StateMachineEditor extends Editor{
                 if(Intersector.distanceSegmentPoint(first, second, worldMouse) < arrowSize/2){
                     shapeRenderer.setColor(Color.RED);
                 } else {
-                    shapeRenderer.setColor(Color.WHITE);
+                    if(state.endState){
+                        shapeRenderer.setColor(Color.YELLOW);
+                    } else {
+                        shapeRenderer.setColor(Color.WHITE);
+                    }
                 }
                 AnimatedSpritePose.drawArrow(shapeRenderer, first, second, arrowSize);
                 offsets.put(transition.target, offset+1);
@@ -85,7 +89,11 @@ public class StateMachineEditor extends Editor{
         spriteBatch.begin();
         for(AnimationStateMachine.State state : stateMachine.states.values()){
             BitmapFont font = ISpriteMain.getSkin().getFont("default-font");
-            font.setColor(Color.WHITE);
+            if(stateMachine.startState.equals(state.id)){
+                font.setColor(Color.GREEN);
+            } else {
+                font.setColor(Color.WHITE);
+            }
             GlyphLayout glyphLayout = new GlyphLayout();
             glyphLayout.setText(font, state.name);
             font.draw(spriteBatch, state.name, state.position.x-glyphLayout.width/2, state.position.y+glyphLayout.height/2);
