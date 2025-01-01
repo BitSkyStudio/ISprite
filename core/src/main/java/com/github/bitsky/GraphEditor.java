@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public class GraphEditor extends Editor {
@@ -28,10 +28,11 @@ public class GraphEditor extends Editor {
 
     private HashMap<UUID, GraphNode> nodes;
     private DragAndDrop dragAndDrop;
-    private float time;
     private Table rightClickMenu;
     private HashMap<String, Supplier<GraphNode>> nodeTypes;
     private HashMap<UUID,InputProperty> properties;
+
+    private FinalPoseGraphNode finalPoseGraphNode;
 
     public GraphEditor() {
         this.linkInputTexture = new Texture("link_input.png");
@@ -41,7 +42,7 @@ public class GraphEditor extends Editor {
         this.dragAndDrop = new DragAndDrop();
         this.nodes = new HashMap<>();
 
-        addNode(new FinalPoseGraphNode(), Vector2.Zero);
+        this.finalPoseGraphNode = addNode(new FinalPoseGraphNode(), Vector2.Zero);
 
         this.properties = new HashMap<>();
 
@@ -51,6 +52,7 @@ public class GraphEditor extends Editor {
         nodeTypes.put("Animated Pose", AnimatedPoseGraphNode::new);
         nodeTypes.put("Blend Pose", BlendPoseGraphNode::new);
         nodeTypes.put("Multiply Pose", MultiplyPoseGraphNode::new);
+        nodeTypes.put("Playback Speed", PlaybackSpeedGraphNode::new);
         nodeTypes.put("Add Pose", AddPoseGraphNode::new);
         nodeTypes.put("State Machine", StateGraphNode::new);
     }
@@ -62,16 +64,18 @@ public class GraphEditor extends Editor {
         this.nodes.forEach((nodeKey, nodeValue) -> nodeValue.disconnectAll(node));
     }
 
-    public void addNode(GraphNode node, Vector2 position){
+    public <T extends GraphNode> T addNode(T node, Vector2 position){
         this.nodes.put(node.id, node);
         this.stage.addActor(node.window);
         node.window.pack();
         node.window.setPosition(position.x, position.y);
+        return node;
     }
 
     @Override
     public void render() {
         super.render();
+        finalPoseGraphNode.tick(Gdx.graphics.getDeltaTime());
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
             stage.getCamera().position.add(-ISpriteMain.getMouseDeltaX(), ISpriteMain.getMouseDeltaY(), 0);
         }
@@ -263,6 +267,23 @@ public class GraphEditor extends Editor {
             this.inputActors.put(name, dragInput);
         }
         public abstract AnimatedSpritePose getOutputPose();
+        public void tick(float step){
+            for(UUID input : inputs.values()){
+                nodes.get(input).tick(step);
+            }
+        }
+        public void reset(){
+            for(UUID input : inputs.values()){
+                nodes.get(input).reset();
+            }
+        }
+        public boolean isFinished(){
+            for(UUID input : inputs.values()){
+                if(!nodes.get(input).isFinished())
+                    return false;
+            }
+            return true;
+        }
         public boolean hasOutput(){
             return true;
         }
@@ -287,6 +308,9 @@ public class GraphEditor extends Editor {
 
     public class AnimatedPoseGraphNode extends GraphNode{
         public final SpriteAnimation animation;
+        public boolean isLooping;
+
+        public float time;
         public AnimatedPoseGraphNode() {
             super("Animated Pose", "Animated Pose Node", true);
 
@@ -298,7 +322,32 @@ public class GraphEditor extends Editor {
                     ISpriteMain.getInstance().setEditor(new AnimationEditor(animation));
                 }
             });
+            CheckBox checkBox = new CheckBox("loop", ISpriteMain.getSkin());
+            checkBox.setChecked(isLooping);
+            checkBox.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent changeEvent, Actor actor) {
+                    isLooping = checkBox.isChecked();
+                }
+            });
+
             this.verticalGroup.addActor(enterButton);
+        }
+
+        @Override
+        public void reset() {
+            time = 0;
+        }
+        @Override
+        public void tick(float step) {
+            time += step;
+            time %= animation.getAnimationLength();
+        }
+        @Override
+        public boolean isFinished() {
+            if(isLooping)
+                return false;
+            return time > animation.getAnimationLength();
         }
         @Override
         public AnimatedSpritePose getOutputPose() {
@@ -363,8 +412,38 @@ public class GraphEditor extends Editor {
             return getInput("Pose1").add(getInput("Pose2"));
         }
     }
+    public class PlaybackSpeedGraphNode extends GraphNode{
+        public float speed;
+        public PlaybackSpeedGraphNode() {
+            super("Playback Speed", "Changes playback speed.", true);
+            addInput("Pose");
+            this.speed = 1;
+            this.window.add(new Label("Speed: ", ISpriteMain.getSkin()));
+            TextField textField = new TextField(""+speed, ISpriteMain.getSkin());
+            textField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            textField.setTextFieldListener((textField1, c) -> {
+                try {
+                    speed = Float.parseFloat(textField1.getText());
+                } catch(NumberFormatException e){
+                    textField.setText(""+speed);
+                }
+            });
+        }
+        @Override
+        public void tick(float step) {
+            nodes.get(inputs.get("Pose")).tick(step*speed);
+        }
+        @Override
+        public AnimatedSpritePose getOutputPose() {
+            return getInput("Pose");
+        }
+    }
     public class StateGraphNode extends GraphNode {
         public final AnimationStateMachine stateMachine;
+
+        public UUID currentState;
+        public int transitionId;
+        public float transitionTime;
         public StateGraphNode() {
             super("State Machine", "Carries internal state.", true);
             this.stateMachine = new AnimationStateMachine();
@@ -377,9 +456,62 @@ public class GraphEditor extends Editor {
             });
             this.verticalGroup.addActor(enterButton);
         }
+        @Override
+        public void reset() {
+            this.currentState = stateMachine.startState;
+            this.transitionId = -1;
+            getInputByState(currentState).reset();
+        }
+        @Override
+        public void tick(float step) {
+            getInputByState(currentState).tick(step);
+            if(transitionId != -1){
+                AnimationStateMachine.StateTransition transition = stateMachine.states.get(currentState).transitions.get(transitionId);
+                transitionTime += step;
+                if(transitionTime > transition.blendTime){
+                    currentState = transition.target;
+                    transitionId = -1;
+                }
+            } else {
+                ArrayList<AnimationStateMachine.StateTransition> transitions = stateMachine.states.get(currentState).transitions;
+                for(int i = 0;i < transitions.size();i++){
+                    AnimationStateMachine.StateTransition transition = transitions.get(i);
+                    boolean failed = false;
+                    for(AnimationStateMachine.TransitionCondition condition : transition.conditions){
+                        if(!condition.comparator.passes(properties.get(condition.propertyId).value, condition.value)){
+                            failed = true;
+                            break;
+                        }
+                    }
+                    if(transition.requireFinished && !getInputByState(currentState).isFinished())
+                        failed = true;
+                    if(!failed){
+                        transitionId = i;
+                        transitionTime = 0;
+                        getInputByState(transition.target).reset();
+                        break;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public boolean isFinished() {
+            return getInputByState(currentState).isFinished() && stateMachine.states.get(currentState).endState;
+        }
 
         @Override
         public AnimatedSpritePose getOutputPose() {
+            GraphNode first = getInputByState(currentState);
+            if(transitionId != -1){
+                AnimationStateMachine.StateTransition transition = stateMachine.states.get(currentState).transitions.get(transitionId);
+                GraphNode second = getInputByState(transition.target);
+                return first.getOutputPose().lerp(second.getOutputPose(), transition.interpolationFunction.function.apply(transitionTime/transition.blendTime));
+            } else {
+                return first.getOutputPose();
+            }
+        }
+        public GraphNode getInputByState(UUID state){
             throw new IllegalStateException("Implement");
         }
     }
