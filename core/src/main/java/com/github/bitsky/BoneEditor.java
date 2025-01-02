@@ -109,7 +109,7 @@ public class BoneEditor extends Editor {
         spriteBatch.end();
         polygonSpriteBatch.begin();
         for(VertexedImage image : sprite.images)
-            image.draw(polygonSpriteBatch, EMPTY_POSE);
+            image.draw(polygonSpriteBatch, EMPTY_POSE, 0, 0);
         polygonSpriteBatch.end();
 
         HashMap<UUID, Transform> transforms = EMPTY_POSE.getBoneTransforms(sprite, new Transform().lock());
