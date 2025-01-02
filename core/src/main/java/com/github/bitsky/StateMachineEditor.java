@@ -56,6 +56,13 @@ public class StateMachineEditor extends Editor{
             }
         }));
 
+        actions.add(new ActionPair("Toggle Is End State", () -> {
+            StateDistancePair pair = getNearestStateToCursor();
+            if (pair.distance < 50) {
+                pair.state.endState = !pair.state.endState;
+            }
+        }));
+
         actions.add(new ActionPair("Begin Connect", () -> {
             StateDistancePair pair = getNearestStateToCursor();
             if (pair.distance < 50) {
@@ -85,11 +92,7 @@ public class StateMachineEditor extends Editor{
                 if(Intersector.distanceSegmentPoint(first, second, worldMouse) < arrowSize/2){
                     shapeRenderer.setColor(Color.RED);
                 } else {
-                    if(state.endState){
-                        shapeRenderer.setColor(Color.YELLOW);
-                    } else {
-                        shapeRenderer.setColor(Color.WHITE);
-                    }
+                    shapeRenderer.setColor(Color.WHITE);
                 }
                 AnimatedSpritePose.drawArrow(shapeRenderer, first, second, arrowSize);
                 offsets.put(transition.target, offset+1);
@@ -110,7 +113,11 @@ public class StateMachineEditor extends Editor{
                     }
                 }
             } else {
-                shapeRenderer.setColor(Color.WHITE);
+                if(state.endState){
+                    shapeRenderer.setColor(Color.YELLOW);
+                } else {
+                    shapeRenderer.setColor(Color.WHITE);
+                }
             }
             shapeRenderer.circle(state.position.x, state.position.y, radius);
         }
