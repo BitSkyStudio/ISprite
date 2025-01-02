@@ -2,6 +2,7 @@ package com.github.bitsky;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -44,6 +45,7 @@ public class GraphEditor extends Editor {
 
     private Stage graphStage;
 
+    private TextButton playButton;
     private boolean playing;
 
     public GraphEditor() {
@@ -66,23 +68,27 @@ public class GraphEditor extends Editor {
         this.stage.addActor(playTable);
         this.animationPlayer = new AnimationPlayerWidget();
         this.playTable.add(animationPlayer).row();
+        HorizontalGroup buttonGroup = new HorizontalGroup();
         TextButton resetButton = new TextButton("Reset", ISpriteMain.getSkin());
         resetButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 finalPoseGraphNode.reset();
+                setPlaying(false);
             }
         });
-        TextButton playButton = new TextButton("Play", ISpriteMain.getSkin());
+        this.playButton = new TextButton("Play", ISpriteMain.getSkin());
         playButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                playing = !playing;
+                setPlaying(!playing);
             }
         });
-        this.playTable.add(resetButton, playButton).row();
+        buttonGroup.addActor(resetButton);
+        buttonGroup.addActor(playButton);
+        this.playTable.add(buttonGroup).row();
 
-        this.playing = false;
+        setPlaying(false);
 
         rightClickMenu = null;
 
@@ -93,6 +99,11 @@ public class GraphEditor extends Editor {
         nodeTypes.put("Playback Speed", PlaybackSpeedGraphNode::new);
         nodeTypes.put("Add Pose", AddPoseGraphNode::new);
         nodeTypes.put("State Machine", StateGraphNode::new);
+    }
+
+    public void setPlaying(boolean playing) {
+        this.playing = playing;
+        this.playButton.setText(playing?"Pause":"Play");
     }
 
     public void removeNode(GraphNode node) {
@@ -115,8 +126,11 @@ public class GraphEditor extends Editor {
         graphStage.act();
         graphStage.draw();
         super.render();
-        if(playing)
+        if(playing) {
             finalPoseGraphNode.tick(Gdx.graphics.getDeltaTime());
+            if(finalPoseGraphNode.isFinished())
+                setPlaying(false);
+        }
         this.animationPlayer.pose = finalPoseGraphNode.getInput("Out");
 
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
@@ -591,6 +605,7 @@ public class GraphEditor extends Editor {
         this.stage.getViewport().setWorldSize(width, width/16f*9);
         graphStage.getViewport().update(width, height);
         super.resize(width, height);
+        Gdx.input.setInputProcessor(new InputMultiplexer(stage, graphStage));
     }
 
     @Override
