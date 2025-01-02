@@ -18,6 +18,23 @@ public class AnimationStateMachine {
         this.states.put(state.id, state);
         return state;
     }
+
+    public void removeState(UUID state) {
+
+        for (State checkState : states.values()) {
+            ArrayList<StateTransition> removeTransitions = new ArrayList<>();
+            for (StateTransition stateTransition : checkState.transitions) {
+                if (stateTransition.target.equals(state)) {
+                    removeTransitions.add(stateTransition);
+                }
+            }
+
+            checkState.transitions.removeAll(removeTransitions);
+        }
+
+        this.states.remove(state);
+    }
+
     public class State{
         public final UUID id;
         public String name;

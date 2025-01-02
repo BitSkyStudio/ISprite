@@ -37,6 +37,15 @@ public class StateMachineEditor extends Editor{
             stateMachine.addState(worldMouse.cpy());
         }));
 
+        actions.add(new ActionPair("Delete State", () -> {
+            StateDistancePair pair = getNearestStateToCursor();
+            if (pair.distance < 50) {
+                AnimationStateMachine.State removeState = pair.state;
+
+                stateMachine.removeState(removeState.id);
+            }
+        }));
+
         actions.add(new ActionPair("Rename", () -> {
             StateDistancePair pair = getNearestStateToCursor();
             if (pair.distance < 50) {
@@ -138,7 +147,11 @@ public class StateMachineEditor extends Editor{
             connecting = null;
         }
 
-        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && this.rightClickMenu != null) {
+        if ((
+            Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) ||
+                Gdx.input.isButtonJustPressed(Input.Buttons.MIDDLE)
+            )
+            && this.rightClickMenu != null) {
             this.rightClickMenu.remove();
             this.rightClickMenu = null;
         }
@@ -198,10 +211,6 @@ public class StateMachineEditor extends Editor{
         public ActionPair(String name, Runnable action) {
             this.name = name;
             this.action = action;
-        }
-
-        public String getName() {
-            return name;
         }
 
         public Runnable getAction() {
