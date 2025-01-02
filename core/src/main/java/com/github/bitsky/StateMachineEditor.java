@@ -55,6 +55,13 @@ public class StateMachineEditor extends Editor{
                 dialog.show(stage);
             }
         }));
+
+        actions.add(new ActionPair("Begin Connect", () -> {
+            StateDistancePair pair = getNearestStateToCursor();
+            if (pair.distance < 50) {
+                connecting = pair.state.id;
+            }
+        }));
     }
 
     @Override
@@ -89,21 +96,7 @@ public class StateMachineEditor extends Editor{
             }
             if(worldMouse.dst(state.position) < radius){
                 shapeRenderer.setColor(Color.RED);
-                if(Gdx.input.isKeyJustPressed(Input.Keys.R)){
-                    TextField input = new TextField(state.name, ISpriteMain.getSkin());
-                    Dialog dialog = new Dialog("Enter new name", ISpriteMain.getSkin(), "dialog") {
-                        public void result(Object obj) {
-                            if (obj instanceof String) {
-                                state.name = input.getText();
-                            }
-                        }
-                    };
-                    dialog.setMovable(false);
-                    dialog.button("Cancel");
-                    dialog.button("Ok", "");
-                    dialog.getContentTable().add(input);
-                    dialog.show(stage);
-                }
+
                 if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)){
                     moving = state.id;
                 }
@@ -172,7 +165,8 @@ public class StateMachineEditor extends Editor{
                 this.rightClickMenu.add(actionButton).row();
             }
 
-            rightClickMenu.setPosition(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
+            Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+            rightClickMenu.setPosition(position.x, position.y);
 
             this.stage.addActor(rightClickMenu);
         }
@@ -213,5 +207,11 @@ public class StateMachineEditor extends Editor{
         public Runnable getAction() {
             return action;
         }
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        this.stage.getViewport().setWorldSize(width, width/16f*9);
+        super.resize(width, height);
     }
 }
