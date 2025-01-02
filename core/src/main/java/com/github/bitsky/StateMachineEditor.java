@@ -8,19 +8,31 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
 public class StateMachineEditor extends Editor{
     public final AnimationStateMachine stateMachine;
-    public StateMachineEditor(AnimationStateMachine stateMachine) {
-        this.stateMachine = stateMachine;
-    }
     private UUID moving;
     private UUID connecting;
+
+    private Table rightClickMenu;
+    private final ArrayList<ActionPair> actions;
+
+    public StateMachineEditor(AnimationStateMachine stateMachine) {
+        this.actions = new ArrayList<>();
+        this.stateMachine = stateMachine;
+        this.rightClickMenu = null;
+
+        actions.add(new ActionPair("Hello", () -> System.out.println("world")));
+    }
+
     @Override
     public void render() {
         super.render();
@@ -109,6 +121,49 @@ public class StateMachineEditor extends Editor{
         }
         if(!Gdx.input.isKeyPressed(Input.Keys.T)){
             connecting = null;
+        }
+
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
+
+            if (this.rightClickMenu != null)
+                this.rightClickMenu.remove();
+
+            this.rightClickMenu = new Table();
+
+            for (ActionPair actionPair : actions) {
+                TextButton actionButton = new TextButton(actionPair.name, ISpriteMain.getSkin());
+                actionButton.addListener(new ClickListener() {
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        rightClickMenu.remove();
+                        actionPair.getAction().run();
+                        super.clicked(event, x, y);
+                    }
+                });
+                this.rightClickMenu.add(actionButton);
+            }
+
+            rightClickMenu.setPosition(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
+
+            this.stage.addActor(rightClickMenu);
+        }
+    }
+
+    private static class ActionPair {
+        private final String name;
+        private final Runnable action;
+
+        public ActionPair(String name, Runnable action) {
+            this.name = name;
+            this.action = action;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Runnable getAction() {
+            return action;
         }
     }
 }
