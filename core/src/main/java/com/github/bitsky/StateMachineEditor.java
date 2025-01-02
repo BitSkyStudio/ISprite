@@ -88,8 +88,10 @@ public class StateMachineEditor extends Editor{
 
         shapeRenderer.begin();
         float radius = 50;
-        for(AnimationStateMachine.State state : stateMachine.states.values()){
+        for(AnimationStateMachine.State state : stateMachine.states.values()) {
             HashMap<UUID,Integer> offsets = new HashMap<>();
+            AnimationStateMachine.StateTransition removeTransition = null;
+
             for(AnimationStateMachine.StateTransition transition : state.transitions){
                 AnimationStateMachine.State targetState = stateMachine.states.get(transition.target);
                 Vector2 diff = targetState.position.cpy().sub(state.position).setLength(radius*1.05f);
@@ -100,12 +102,19 @@ public class StateMachineEditor extends Editor{
                 Vector2 second = targetState.position.cpy().sub(diff).add(perpShift);
                 if(Intersector.distanceSegmentPoint(first, second, worldMouse) < arrowSize/2){
                     shapeRenderer.setColor(Color.RED);
+
+                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))
+                        removeTransition = transition;
+
                 } else {
                     shapeRenderer.setColor(Color.WHITE);
                 }
                 AnimatedSpritePose.drawArrow(shapeRenderer, first, second, arrowSize);
                 offsets.put(transition.target, offset+1);
             }
+
+            state.transitions.remove(removeTransition);
+
             if(worldMouse.dst(state.position) < radius){
                 shapeRenderer.setColor(Color.RED);
 
