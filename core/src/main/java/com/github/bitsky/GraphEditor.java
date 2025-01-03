@@ -378,7 +378,7 @@ public class GraphEditor extends Editor {
 
         public float time;
         public AnimatedPoseGraphNode() {
-            super("Animated Pose", "Animated Pose Node", true);
+            super("Animated Pose", "KeyFramed animation.", true);
 
             this.animation = new SpriteAnimation();
             TextButton enterButton = new TextButton("Edit", ISpriteMain.getSkin());

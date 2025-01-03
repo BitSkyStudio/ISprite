@@ -18,18 +18,13 @@ import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static java.lang.Math.round;
-
 public class DedicatedKeyFrameWindow extends Window {
     public static final float TIME_SUB_DIVISION = 64;
 
     private SpriteAnimation spriteAnimation;
-    private ArrayList<KeyframeRow> keyframeRows = new ArrayList<>();
-
-    private AnimationEditor animationEditor;
-
+    private final ArrayList<KeyframeRow> keyframeRows = new ArrayList<>();
+    private final AnimationEditor animationEditor;
     private float animationStepTime;
-
     private KeyframeMarker lastSelectedMarker;
 
     public DedicatedKeyFrameWindow(String title, SpriteAnimation animation, AnimationEditor animationEditor) {
@@ -48,13 +43,6 @@ public class DedicatedKeyFrameWindow extends Window {
             lastSelectedMarker.keyframeRow.propertyTrack.getTrack().get(lastSelectedMarker.time).interpolationFunction = animationEditor.functionSelectBox.getSelected();
             return false;
         });
-        /*
-        AnimationTrack.PropertyTrack<Float> propertyTrack = new AnimationTrack.PropertyTrack<>((first, second, t) -> second);
-        propertyTrack.addKeyframe(0, 3f);
-        propertyTrack.addKeyframe(3, 3f);
-        propertyTrack.addKeyframe(1f, 0f);
-
-        this.addKeyFrameRow(new KeyframeRow(propertyTrack, "TEST TRACK"));*/
     }
 
     @Override
@@ -99,7 +87,7 @@ public class DedicatedKeyFrameWindow extends Window {
 
     private class KeyframeMarker {
 
-        private KeyframeRow keyframeRow;
+        private final KeyframeRow keyframeRow;
 
         private float parentX;
         private float parentY;
@@ -159,8 +147,6 @@ public class DedicatedKeyFrameWindow extends Window {
 
         private KeyframeMarker mouseDragMarker;
 
-        private boolean mouseHovering;
-
         private float x;
         private float y;
         private final String trackName;
@@ -216,7 +202,6 @@ public class DedicatedKeyFrameWindow extends Window {
                 this.markers.remove(toRemove.get());
             }
 
-            this.mouseHovering = true;
             return super.hit(x, y, touchable);
         }
 
@@ -286,7 +271,6 @@ public class DedicatedKeyFrameWindow extends Window {
             this.bitmapFont.setColor(Color.valueOf("EAEAEA"));
             this.bitmapFont.draw(batch, this.trackName, getX(), getY() + getHeight() / 2f);
 
-            this.mouseHovering = false;
         }
     }
 }
