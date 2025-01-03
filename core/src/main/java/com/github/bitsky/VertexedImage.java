@@ -51,7 +51,7 @@ public class VertexedImage {
         } finally {
             writer.dispose();
         }
-        json.put("texture", Base64.getEncoder().encode(outputStream.toByteArray()));
+        json.put("texture", Base64.getEncoder().encodeToString(outputStream.toByteArray()));
         json.put("transform", transform.save());
         JSONArray vertices = new JSONArray();
         for(Vertex vertex : points){

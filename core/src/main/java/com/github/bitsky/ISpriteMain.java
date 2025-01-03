@@ -6,6 +6,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import org.json.JSONObject;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class ISpriteMain extends ApplicationAdapter {
@@ -53,6 +54,12 @@ public class ISpriteMain extends ApplicationAdapter {
             } else {
                 setEditor(new BoneEditor());
             }
+        }
+        if(Gdx.input.isKeyJustPressed(Input.Keys.F1)){
+            JSONObject project = new JSONObject();
+            project.put("sprite", sprite.save());
+            project.put("graph", graphEditor.save());
+            System.out.println(project.toString(4));
         }
         this.lastMouse = new Vector2(Gdx.input.getX(), Gdx.input.getY());
     }

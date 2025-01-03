@@ -20,6 +20,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -127,6 +128,55 @@ public class GraphEditor extends Editor {
         nodeTypes.put("Playback Speed", PlaybackSpeedGraphNode::new);
         nodeTypes.put("Add Pose", AddPoseGraphNode::new);
         nodeTypes.put("State Machine", StateGraphNode::new);
+    }
+    public JSONObject save(){
+        JSONObject json = new JSONObject();
+        json.put("final", finalPoseGraphNode.save());
+        JSONObject nodesJson = new JSONObject();
+        for(Map.Entry<UUID, GraphNode> entry : nodes.entrySet()){
+            if(entry.getValue() == finalPoseGraphNode)
+                continue;
+            nodesJson.put(entry.getKey().toString(), entry.getValue().save());
+        }
+        json.put("nodes", nodesJson);
+        JSONObject propertiesJson = new JSONObject();
+        for(Map.Entry<UUID, InputProperty> entry : properties.entrySet()){
+            JSONObject propertyJson = new JSONObject();
+            propertyJson.put("id", entry.getValue().id);
+            propertyJson.put("name", entry.getValue().name);
+            propertyJson.put("value", entry.getValue().value);
+            if(entry.getValue().resetValue != null)
+                propertyJson.put("resetValue", entry.getValue().resetValue);
+            propertiesJson.put(entry.getKey().toString(), propertyJson);
+        }
+        json.put("properties", propertiesJson);
+        return json;
+    }
+    public void load(JSONObject json){
+        finalPoseGraphNode.load(json.getJSONObject("final"));
+        for(GraphNode node : nodes.values()){
+            if(node != finalPoseGraphNode){
+                removeNode(node);
+            }
+        }
+        JSONObject nodesJson = json.getJSONObject("nodes");
+        for(String id : nodesJson.keySet()){
+            JSONObject nodeJson = nodesJson.getJSONObject(id);
+            GraphNode node = nodeTypes.get(nodeJson.getString("type")).get();
+            node.load(nodeJson);
+            addNode(node, new Vector2(node.window.getX(), node.window.getY()));
+        }
+        properties.clear();
+        JSONObject propertiesJson = json.getJSONObject("properties");
+        for(String id : propertiesJson.keySet()){
+            JSONObject propertyJson = propertiesJson.getJSONObject(id);
+            InputProperty inputProperty = new InputProperty();
+            inputProperty.id = UUID.fromString(propertyJson.getString("id"));
+            inputProperty.name = propertyJson.getString("name");
+            inputProperty.value = propertyJson.getFloat("value");
+            inputProperty.resetValue = propertyJson.has("resetValue")?propertyJson.getFloat("resetValue"):null;
+            properties.put(inputProperty.id, inputProperty);
+;        }
     }
 
     public void setPlaying(boolean playing) {
@@ -329,6 +379,7 @@ public class GraphEditor extends Editor {
             window.add(this.verticalGroup);
 
         }
+        public abstract String getTypeName();
 
         /**
          * remove every connection with specified node
@@ -416,6 +467,7 @@ public class GraphEditor extends Editor {
 
         public JSONObject save(){
             JSONObject json = new JSONObject();
+            json.put("type", getTypeName());
             JSONObject inputsJson = new JSONObject();
             for(Map.Entry<String, UUID> entry : inputs.entrySet()){
                 inputsJson.put(entry.getKey(), entry.getValue().toString());
@@ -439,6 +491,12 @@ public class GraphEditor extends Editor {
             super("Final Pose", "Pose to be displayed by the animation renderer.", false);
             addInput("Out");
         }
+
+        @Override
+        public String getTypeName() {
+            return "";
+        }
+
         @Override
         public AnimatedSpritePose getOutputPose() {
             throw new IllegalStateException();
@@ -493,6 +551,12 @@ public class GraphEditor extends Editor {
                 return false;
             return time > animation.getAnimationLength();
         }
+
+        @Override
+        public String getTypeName() {
+            return "Animated Pose";
+        }
+
         @Override
         public AnimatedSpritePose getOutputPose() {
             return animation.getPose(time);
@@ -537,6 +601,11 @@ public class GraphEditor extends Editor {
         }
 
         @Override
+        public String getTypeName() {
+            return "Blend Pose";
+        }
+
+        @Override
         public AnimatedSpritePose getOutputPose() {
             return getInput("Pose1").lerp(getInput("Pose2"), blendValue);
         }
@@ -573,6 +642,12 @@ public class GraphEditor extends Editor {
             });
             this.window.add(textField);
         }
+
+        @Override
+        public String getTypeName() {
+            return "Multiply Pose";
+        }
+
         @Override
         public AnimatedSpritePose getOutputPose() {
             return getInput("Pose").multiply(multiplyValue);
@@ -597,6 +672,12 @@ public class GraphEditor extends Editor {
             addInput("Pose1");
             addInput("Pose2");
         }
+
+        @Override
+        public String getTypeName() {
+            return "Add Pose";
+        }
+
         @Override
         public AnimatedSpritePose getOutputPose() {
             return getInput("Pose1").add(getInput("Pose2"));
@@ -627,6 +708,11 @@ public class GraphEditor extends Editor {
         @Override
         public void tick(float step) {
             nodes.get(inputs.get("Pose")).tick(step*speed);
+        }
+
+        @Override
+        public String getTypeName() {
+            return "Playback Speed";
         }
 
         @Override
@@ -711,6 +797,11 @@ public class GraphEditor extends Editor {
         @Override
         public boolean isFinished() {
             return getInputByState(currentState).isFinished() && stateMachine.states.get(currentState).endState;
+        }
+
+        @Override
+        public String getTypeName() {
+            return "State Machine";
         }
 
         @Override

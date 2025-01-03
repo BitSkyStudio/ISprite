@@ -29,7 +29,8 @@ public class AnimatedSpriteBone {
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();
-        json.put("parent", parent.toString());
+        if(parent != null)
+            json.put("parent", parent.toString());
         json.put("name", name);
         JSONArray children = new JSONArray();
         for(UUID child : this.children){
@@ -41,7 +42,7 @@ public class AnimatedSpriteBone {
         return json;
     }
     public void load(JSONObject json){
-        this.parent = UUID.fromString(json.getString("parent"));
+        this.parent = json.has("parent")?UUID.fromString(json.getString("parent")):null;
         this.name = json.getString("name");
         this.children.clear();
         for(Object child : json.getJSONArray("children")){
