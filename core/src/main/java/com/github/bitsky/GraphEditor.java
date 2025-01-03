@@ -217,7 +217,15 @@ public class GraphEditor extends Editor {
                     valueField.setText(String.valueOf(property.value));
                 }
             });
-            propertiesTable.add(name, valueField).row();
+            TextButton removeButton = new TextButton("remove", ISpriteMain.getSkin());
+            removeButton.addListener(new ClickListener(){
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    properties.remove(property.id);
+                    refreshPropertyTable();
+                }
+            });
+            propertiesTable.add(name, valueField, removeButton).row();
         }
     }
 

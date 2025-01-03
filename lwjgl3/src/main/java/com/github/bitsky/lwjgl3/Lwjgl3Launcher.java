@@ -3,6 +3,7 @@ package com.github.bitsky.lwjgl3;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.github.bitsky.ISpriteMain;
+import games.spooky.gdx.nativefilechooser.desktop.DesktopFileChooser;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
@@ -12,7 +13,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new ISpriteMain(), getDefaultConfiguration());
+        return new Lwjgl3Application(new ISpriteMain(new DesktopFileChooser()), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

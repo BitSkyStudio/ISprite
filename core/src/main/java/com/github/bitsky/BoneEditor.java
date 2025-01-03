@@ -2,7 +2,9 @@ package com.github.bitsky;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -10,6 +12,10 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent;
+import org.json.JSONObject;
 
 import java.util.*;
 
@@ -42,7 +48,49 @@ public class BoneEditor extends Editor {
             }
         };
         boneHierarchyTable.add(imageList).row();
-        imageList.setItems(sprite.images.toArray(VertexedImage[]::new));
+        TextButton removeImageButton = new TextButton("Remove Image", ISpriteMain.getSkin());
+        removeImageButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if(imageList.getSelected() != null){
+                    sprite.images.remove(imageList.getSelected());
+                    refreshImages();
+                }
+            }
+        });
+        boneHierarchyTable.add(removeImageButton).row();
+        TextButton addImageButton = new TextButton("Add Image", ISpriteMain.getSkin());
+        addImageButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+                conf.mimeFilter = "image/png";
+                conf.intent = NativeFileChooserIntent.OPEN;
+                conf.title = "Import image";
+                conf.directory = new FileHandle(".");
+                ISpriteMain.getInstance().fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+                    @Override
+                    public void onFileChosen(FileHandle fileHandle) {
+                        sprite.images.add(new VertexedImage(new Texture(fileHandle)));
+                        refreshImages();
+                        imageList.setSelectedIndex(imageList.getItems().size-1);
+                    }
+                    @Override
+                    public void onCancellation() {
+
+                    }
+                    @Override
+                    public void onError(Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+        });
+        boneHierarchyTable.add(addImageButton);
+        refreshImages();
+    }
+    private void refreshImages(){
+        imageList.setItems(ISpriteMain.getInstance().sprite.images.toArray(VertexedImage[]::new));
     }
     private void recurseAddHierarchy(BoneNode node){
         boneNodes.put(node.getValue().id, node);

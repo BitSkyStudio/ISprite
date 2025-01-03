@@ -3,9 +3,14 @@ package com.github.bitsky;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import games.spooky.gdx.nativefilechooser.NativeFileChooser;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent;
 import org.json.JSONObject;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -19,6 +24,13 @@ public class ISpriteMain extends ApplicationAdapter {
     private Skin skin;
 
     private Vector2 lastMouse;
+
+    public final NativeFileChooser fileChooser;
+
+    public ISpriteMain(NativeFileChooser fileChooser) {
+        this.fileChooser = fileChooser;
+    }
+
     @Override
     public void create() {
         this.skin = new Skin(Gdx.files.internal("skin/uiskin.json"));
@@ -56,10 +68,52 @@ public class ISpriteMain extends ApplicationAdapter {
             }
         }
         if(Gdx.input.isKeyJustPressed(Input.Keys.F1)){
-            JSONObject project = new JSONObject();
-            project.put("sprite", sprite.save());
-            project.put("graph", graphEditor.save());
-            System.out.println(project.toString(4));
+            NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+            conf.mimeFilter = "application/ispr";
+            conf.intent = NativeFileChooserIntent.SAVE;
+            conf.title = "Save sprite";
+            conf.directory = new FileHandle(".");
+            fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+                @Override
+                public void onFileChosen(FileHandle fileHandle) {
+                    JSONObject project = new JSONObject();
+                    project.put("sprite", sprite.save());
+                    project.put("graph", graphEditor.save());
+                    fileHandle.writeBytes(project.toString(4).getBytes(), false);
+                }
+                @Override
+                public void onCancellation() {
+
+                }
+                @Override
+                public void onError(Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+        if(Gdx.input.isKeyJustPressed(Input.Keys.F2)){
+            NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+            conf.mimeFilter = "application/ispr";
+            conf.intent = NativeFileChooserIntent.OPEN;
+            conf.title = "Load sprite";
+            conf.directory = new FileHandle(".");
+            fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+                @Override
+                public void onFileChosen(FileHandle fileHandle) {
+                    JSONObject project = new JSONObject(fileHandle.readString());
+                    sprite.load(project.getJSONObject("sprite"));
+                    graphEditor.load(project.getJSONObject("graph"));
+                    setEditor(new BoneEditor());
+                }
+                @Override
+                public void onCancellation() {
+
+                }
+                @Override
+                public void onError(Exception e) {
+                    e.printStackTrace();
+                }
+            });
         }
         this.lastMouse = new Vector2(Gdx.input.getX(), Gdx.input.getY());
     }
