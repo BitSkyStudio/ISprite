@@ -23,8 +23,6 @@ public class StateMachineEditor extends Editor{
     private UUID moving;
     private UUID connecting;
 
-    private AnimationStateMachine.StateTransition highlightedTransition;
-
     private Table rightClickMenu;
     private StateDistancePair rightClickPair;
     private final ArrayList<ActionPair> actions;
@@ -88,21 +86,11 @@ public class StateMachineEditor extends Editor{
 
             @Override public void run() {}
         }).setTransitionAction());
-
-        actions.add(new ActionPair("Do something", new ActionCallback() {
-            @Override
-            public void run(AnimationStateMachine.StateTransition stateTransition) {
-                for (AnimationStateMachine.State state : stateMachine.states.values())
-                    state.transitions.remove(stateTransition);
-            }
-
-            @Override public void run() {}
-        }).setTransitionAction());
     }
 
     @Override
     public void render() {
-        this.highlightedTransition = null;
+        AnimationStateMachine.StateTransition highlightedTransition = null;
 
         super.render();
         Vector3 worldMouse3 = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
@@ -124,7 +112,7 @@ public class StateMachineEditor extends Editor{
                 if(Intersector.distanceSegmentPoint(first, second, worldMouse) < arrowSize/2){
                     shapeRenderer.setColor(Color.RED);
 
-                    this.highlightedTransition = transition;
+                    highlightedTransition = transition;
 
                 } else {
                     shapeRenderer.setColor(Color.WHITE);
@@ -193,7 +181,7 @@ public class StateMachineEditor extends Editor{
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
 
-            final AnimationStateMachine.StateTransition localStateTransition = this.highlightedTransition;
+            final AnimationStateMachine.StateTransition localStateTransition = highlightedTransition;
 
             if (this.rightClickMenu != null) {
                 this.rightClickMenu.remove();
@@ -203,7 +191,7 @@ public class StateMachineEditor extends Editor{
             this.rightClickMenu = new Table();
 
             for (ActionPair actionPair : actions) {
-                if (actionPair.isTransitionAction || this.highlightedTransition != null)
+                if (actionPair.isTransitionAction || highlightedTransition != null)
                     continue;
 
                 TextButton actionButton = new TextButton(actionPair.name, ISpriteMain.getSkin());
@@ -239,6 +227,8 @@ public class StateMachineEditor extends Editor{
 
             this.rightClickPair = getNearestStateToCursor();
         }
+
+        stage.draw();
     }
 
     private StateDistancePair getNearestStateToCursor() {
