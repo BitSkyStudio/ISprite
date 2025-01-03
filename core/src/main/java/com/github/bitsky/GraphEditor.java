@@ -20,6 +20,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -412,6 +413,25 @@ public class GraphEditor extends Editor {
                 return new AnimatedSpritePose(new HashMap<>());
             return nodes.get(inputs.get(input)).getOutputPose();
         }
+
+        public JSONObject save(){
+            JSONObject json = new JSONObject();
+            JSONObject inputsJson = new JSONObject();
+            for(Map.Entry<String, UUID> entry : inputs.entrySet()){
+                inputsJson.put(entry.getKey(), entry.getValue().toString());
+            }
+            json.put("inputs", inputsJson);
+            JSONObject position = new JSONObject();
+            position.put("x", window.getX());
+            position.put("y", window.getY());
+            json.put("position", position);
+            return json;
+        }
+        public void load(JSONObject json){
+            //todo: load inputs + actors (idk how that works)
+            JSONObject position = json.getJSONObject("position");
+            window.setPosition(position.getFloat("x"), position.getFloat("y"));
+        }
     }
 
     public class FinalPoseGraphNode extends GraphNode{
@@ -477,6 +497,21 @@ public class GraphEditor extends Editor {
         public AnimatedSpritePose getOutputPose() {
             return animation.getPose(time);
         }
+
+        @Override
+        public JSONObject save() {
+            JSONObject json = super.save();
+            json.put("looping", isLooping);
+            json.put("animation", animation.save());
+            return json;
+        }
+        @Override
+        public void load(JSONObject json) {
+            super.load(json);
+            this.isLooping = json.getBoolean("looping");
+            //todo: set checkbox state
+            this.animation.load(json.getJSONObject("animation"));
+        }
     }
 
     public class BlendPoseGraphNode extends GraphNode{
@@ -505,6 +540,19 @@ public class GraphEditor extends Editor {
         public AnimatedSpritePose getOutputPose() {
             return getInput("Pose1").lerp(getInput("Pose2"), blendValue);
         }
+
+        @Override
+        public JSONObject save() {
+            JSONObject json = super.save();
+            json.put("blendValue", blendValue);
+            return json;
+        }
+        @Override
+        public void load(JSONObject json) {
+            super.load(json);
+            this.blendValue = json.getFloat("blendValue");
+            //todo: update ui
+        }
     }
 
     public class MultiplyPoseGraphNode extends GraphNode{
@@ -528,6 +576,18 @@ public class GraphEditor extends Editor {
         @Override
         public AnimatedSpritePose getOutputPose() {
             return getInput("Pose").multiply(multiplyValue);
+        }
+        @Override
+        public JSONObject save() {
+            JSONObject json = super.save();
+            json.put("multiplyValue", multiplyValue);
+            return json;
+        }
+        @Override
+        public void load(JSONObject json) {
+            super.load(json);
+            this.multiplyValue = json.getFloat("multiplyValue");
+            //todo: update ui
         }
     }
 
@@ -572,6 +632,19 @@ public class GraphEditor extends Editor {
         @Override
         public AnimatedSpritePose getOutputPose() {
             return getInput("Pose");
+        }
+
+        @Override
+        public JSONObject save() {
+            JSONObject json = super.save();
+            json.put("speed", speed);
+            return json;
+        }
+        @Override
+        public void load(JSONObject json) {
+            super.load(json);
+            this.speed = json.getFloat("speed");
+            //todo: update ui
         }
     }
 
@@ -654,6 +727,18 @@ public class GraphEditor extends Editor {
 
         public GraphNode getInputByState(UUID state) {
             throw new IllegalStateException("Implement");
+        }
+
+        @Override
+        public JSONObject save() {
+            JSONObject json = super.save();
+            json.put("stateMachine", stateMachine.save());
+            return json;
+        }
+        @Override
+        public void load(JSONObject json) {
+            super.load(json);
+            this.stateMachine.load(json.getJSONObject("stateMachine"));
         }
     }
 
