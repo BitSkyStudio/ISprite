@@ -108,7 +108,7 @@ public class VertexedImage {
         spriteBatch.draw(texture, 0, 0);
         spriteBatch.setTransformMatrix(new Matrix4());
     }
-    public void draw(PolygonSpriteBatch polygonSpriteBatch, AnimatedSpritePose pose){
+    public void draw(PolygonSpriteBatch polygonSpriteBatch, AnimatedSpritePose pose, float x, float y){
         float[] vertices = new float[points.size()*2];
         for(int i = 0;i < points.size();i++){
             vertices[(i*2)] = points.get(i).position.x;
@@ -134,7 +134,7 @@ public class VertexedImage {
             vertices[i*2] = outputVertex.x;
             vertices[i*2+1] = outputVertex.y;
         }
-        polygonSpriteBatch.draw(polygonRegion, 0, 0);
+        polygonSpriteBatch.draw(polygonRegion, x, y);
     }
     public void debugDraw(ShapeRenderer shapeRenderer){
         shapeRenderer.setTransformMatrix(getTransformMatrix());

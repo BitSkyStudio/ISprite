@@ -26,6 +26,7 @@ public class StateMachineEditor extends Editor{
     private AnimationStateMachine.StateTransition highlightedTransition;
 
     private Table rightClickMenu;
+    private StateDistancePair rightClickPair;
     private final ArrayList<ActionPair> actions;
 
     public StateMachineEditor(AnimationStateMachine stateMachine) {
@@ -40,22 +41,21 @@ public class StateMachineEditor extends Editor{
         }));
 
         actions.add(new ActionPair("Delete State", () -> {
-            StateDistancePair pair = getNearestStateToCursor();
-            if (pair.distance < 50) {
-                AnimationStateMachine.State removeState = pair.state;
-
-                stateMachine.removeState(removeState.id);
+            if (rightClickPair.distance < 50) {
+                AnimationStateMachine.State removeState = rightClickPair.state;
+                if(!stateMachine.startState.equals(removeState.id)) {
+                    stateMachine.removeState(removeState.id);
+                }
             }
         }));
 
         actions.add(new ActionPair("Rename", () -> {
-            StateDistancePair pair = getNearestStateToCursor();
-            if (pair.distance < 50) {
-                TextField input = new TextField(pair.state.name, ISpriteMain.getSkin());
+            if (rightClickPair.distance < 50) {
+                TextField input = new TextField(rightClickPair.state.name, ISpriteMain.getSkin());
                 Dialog dialog = new Dialog("Enter new name", ISpriteMain.getSkin(), "dialog") {
                     public void result(Object obj) {
                         if (obj instanceof String) {
-                            pair.state.name = input.getText();
+                            rightClickPair.state.name = input.getText();
                         }
                     }
                 };
@@ -68,16 +68,14 @@ public class StateMachineEditor extends Editor{
         }));
 
         actions.add(new ActionPair("Toggle Is End State", () -> {
-            StateDistancePair pair = getNearestStateToCursor();
-            if (pair.distance < 50) {
-                pair.state.endState = !pair.state.endState;
+            if (rightClickPair.distance < 50) {
+                rightClickPair.state.endState = !rightClickPair.state.endState;
             }
         }));
 
         actions.add(new ActionPair("Begin Connect", () -> {
-            StateDistancePair pair = getNearestStateToCursor();
-            if (pair.distance < 50) {
-                connecting = pair.state.id;
+            if (rightClickPair.distance < 50) {
+                connecting = rightClickPair.state.id;
             }
         }));
 
@@ -141,15 +139,6 @@ public class StateMachineEditor extends Editor{
                 if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)){
                     moving = state.id;
                 }
-                if(Gdx.input.isKeyJustPressed(Input.Keys.T)){
-                    connecting = state.id;
-                }
-                if(!Gdx.input.isKeyPressed(Input.Keys.T)){
-                    if(connecting != null && !connecting.equals(state.id)){
-                        AnimationStateMachine.State original = stateMachine.states.get(connecting);
-                        original.addTransition(state);
-                    }
-                }
             } else {
                 if(state.endState){
                     shapeRenderer.setColor(Color.YELLOW);
@@ -179,7 +168,17 @@ public class StateMachineEditor extends Editor{
         } else if(moving != null) {
             stateMachine.states.get(moving).position.add(ISpriteMain.getMouseDeltaX(), -ISpriteMain.getMouseDeltaY());
         }
-        if(!Gdx.input.isKeyPressed(Input.Keys.T)){
+        if(connecting != null){
+            shapeRenderer.begin();
+            shapeRenderer.setColor(Color.WHITE);
+            AnimatedSpritePose.drawArrow(shapeRenderer, stateMachine.states.get(connecting).position, worldMouse, 10);
+            shapeRenderer.end();
+        }
+        if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && connecting != null){
+            StateDistancePair pair = getNearestStateToCursor();
+            if (pair.distance < 50) {
+                stateMachine.states.get(connecting).addTransition(pair.state);
+            }
             connecting = null;
         }
 
@@ -237,6 +236,8 @@ public class StateMachineEditor extends Editor{
             rightClickMenu.setPosition(position.x, position.y);
 
             this.stage.addActor(rightClickMenu);
+
+            this.rightClickPair = getNearestStateToCursor();
         }
     }
 

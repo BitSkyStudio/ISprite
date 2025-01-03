@@ -2,18 +2,24 @@ package com.github.bitsky;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
+import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,10 +40,20 @@ public class GraphEditor extends Editor {
 
     private FinalPoseGraphNode finalPoseGraphNode;
 
+    private Table playTable;
+    private AnimationPlayerWidget animationPlayer;
+
+    private Stage graphStage;
+
+    private TextButton playButton;
+    private boolean playing;
+
     public GraphEditor() {
         this.linkInputTexture = new Texture("link_input.png");
         this.linkInputFilledTexture = new Texture("link_input_filled.png");
         this.linkOutputTexture = new Texture("link_output.png");
+
+        this.graphStage = new Stage();
 
         this.dragAndDrop = new DragAndDrop();
         this.nodes = new HashMap<>();
@@ -45,6 +61,34 @@ public class GraphEditor extends Editor {
         this.finalPoseGraphNode = addNode(new FinalPoseGraphNode(), Vector2.Zero);
 
         this.properties = new HashMap<>();
+
+        this.playTable = new Table();
+        this.playTable.setFillParent(true);
+        this.playTable.left();
+        this.stage.addActor(playTable);
+        this.animationPlayer = new AnimationPlayerWidget();
+        this.playTable.add(animationPlayer).row();
+        HorizontalGroup buttonGroup = new HorizontalGroup();
+        TextButton resetButton = new TextButton("Reset", ISpriteMain.getSkin());
+        resetButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                finalPoseGraphNode.reset();
+                setPlaying(false);
+            }
+        });
+        this.playButton = new TextButton("Play", ISpriteMain.getSkin());
+        playButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                setPlaying(!playing);
+            }
+        });
+        buttonGroup.addActor(resetButton);
+        buttonGroup.addActor(playButton);
+        this.playTable.add(buttonGroup).row();
+
+        setPlaying(false);
 
         rightClickMenu = null;
 
@@ -57,6 +101,11 @@ public class GraphEditor extends Editor {
         nodeTypes.put("State Machine", StateGraphNode::new);
     }
 
+    public void setPlaying(boolean playing) {
+        this.playing = playing;
+        this.playButton.setText(playing?"Pause":"Play");
+    }
+
     public void removeNode(GraphNode node) {
         node.window.remove();
 
@@ -66,7 +115,7 @@ public class GraphEditor extends Editor {
 
     public <T extends GraphNode> T addNode(T node, Vector2 position){
         this.nodes.put(node.id, node);
-        this.stage.addActor(node.window);
+        this.graphStage.addActor(node.window);
         node.window.pack();
         node.window.setPosition(position.x, position.y);
         return node;
@@ -74,25 +123,33 @@ public class GraphEditor extends Editor {
 
     @Override
     public void render() {
+        graphStage.act();
+        graphStage.draw();
         super.render();
-        finalPoseGraphNode.tick(Gdx.graphics.getDeltaTime());
+        if(playing) {
+            finalPoseGraphNode.tick(Gdx.graphics.getDeltaTime());
+            if(finalPoseGraphNode.isFinished())
+                setPlaying(false);
+        }
+        this.animationPlayer.pose = finalPoseGraphNode.getInput("Out");
+
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
-            stage.getCamera().position.add(-ISpriteMain.getMouseDeltaX(), ISpriteMain.getMouseDeltaY(), 0);
+            graphStage.getCamera().position.add(-ISpriteMain.getMouseDeltaX(), ISpriteMain.getMouseDeltaY(), 0);
         }
         if(Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)){
             if(rightClickMenu != null)
                 rightClickMenu.remove();
 
             this.rightClickMenu = new Table();
-            stage.addActor(rightClickMenu);
-            Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+            graphStage.addActor(rightClickMenu);
+            Vector3 position = graphStage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
             rightClickMenu.setPosition(position.x, position.y);
             for(Map.Entry<String, Supplier<GraphNode>> entry : nodeTypes.entrySet()){
                 TextButton button = new TextButton(entry.getKey(), ISpriteMain.getSkin());
                 button.addListener(new ClickListener(){
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
+                        Vector3 position = graphStage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
                         addNode(entry.getValue().get(), new Vector2(position.x, position.y));
                         if(rightClickMenu != null) {
                             rightClickMenu.remove();
@@ -111,7 +168,7 @@ public class GraphEditor extends Editor {
             }
         }
 
-        shapeRenderer.setProjectionMatrix(stage.getCamera().combined);
+        shapeRenderer.setProjectionMatrix(graphStage.getCamera().combined);
         shapeRenderer.setAutoShapeType(true);
         shapeRenderer.begin();
         shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
@@ -134,6 +191,7 @@ public class GraphEditor extends Editor {
         shapeRenderer.end();
         shapeRenderer.setProjectionMatrix(camera.combined);
     }
+
 
     public static class ConnectionData{
         public final UUID first;
@@ -293,6 +351,8 @@ public class GraphEditor extends Editor {
         }
 
         public AnimatedSpritePose getInput(String input) {
+            if(!inputs.containsKey(input))
+                return new AnimatedSpritePose(new HashMap<>());
             return nodes.get(inputs.get(input)).getOutputPose();
         }
     }
@@ -543,7 +603,15 @@ public class GraphEditor extends Editor {
     @Override
     public void resize(int width, int height) {
         this.stage.getViewport().setWorldSize(width, width/16f*9);
+        graphStage.getViewport().update(width, height);
         super.resize(width, height);
+        Gdx.input.setInputProcessor(new InputMultiplexer(stage, graphStage));
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        graphStage.dispose();
     }
 
     @Override
@@ -561,6 +629,48 @@ public class GraphEditor extends Editor {
             this.name = "property";
             this.value = 0;
             this.resetValue = null;
+        }
+    }
+
+    public class AnimationPlayerWidget extends Widget{
+        private final PolygonSpriteBatch polygonSpriteBatch;
+        public AnimatedSpritePose pose;
+        public AnimationPlayerWidget() {
+            this.polygonSpriteBatch = new PolygonSpriteBatch();
+            this.pose = BoneEditor.EMPTY_POSE;
+        }
+        @Override
+        public void draw(Batch batch, float parentAlpha) {
+            super.draw(batch, parentAlpha);
+            batch.draw(linkInputTexture, getX(), getY(), getMinWidth(), getMinHeight());
+            batch.end();
+            polygonSpriteBatch.setProjectionMatrix(batch.getProjectionMatrix());
+            polygonSpriteBatch.begin();
+            Rectangle scissors = new Rectangle();
+            Rectangle clipBounds = new Rectangle(getX(),getY(),getMinWidth(),getMinHeight());
+            ScissorStack.calculateScissors(stage.getCamera(), polygonSpriteBatch.getTransformMatrix(), clipBounds, scissors);
+            if (ScissorStack.pushScissors(scissors)) {
+                for(VertexedImage image : ISpriteMain.getInstance().sprite.images)
+                    image.draw(polygonSpriteBatch, pose, getX(), getY());
+                polygonSpriteBatch.flush();
+                ScissorStack.popScissors();
+            }
+            polygonSpriteBatch.end();
+            batch.begin();
+        }
+        @Override
+        public float getMinWidth() {
+            return 300;
+        }
+        @Override
+        public float getMinHeight() {
+            return 300;
+        }
+
+        @Override
+        public boolean remove() {
+            polygonSpriteBatch.dispose();
+            return super.remove();
         }
     }
 }
