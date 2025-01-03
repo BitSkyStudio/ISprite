@@ -23,6 +23,8 @@ public class StateMachineEditor extends Editor{
     private UUID moving;
     private UUID connecting;
 
+    private AnimationStateMachine.StateTransition highlightedTransition;
+
     private Table rightClickMenu;
     private final ArrayList<ActionPair> actions;
 
@@ -78,10 +80,32 @@ public class StateMachineEditor extends Editor{
                 connecting = pair.state.id;
             }
         }));
+
+        actions.add(new ActionPair("Remove", new ActionCallback() {
+            @Override
+            public void run(AnimationStateMachine.StateTransition stateTransition) {
+                for (AnimationStateMachine.State state : stateMachine.states.values())
+                    state.transitions.remove(stateTransition);
+            }
+
+            @Override public void run() {}
+        }).setTransitionAction());
+
+        actions.add(new ActionPair("Do something", new ActionCallback() {
+            @Override
+            public void run(AnimationStateMachine.StateTransition stateTransition) {
+                for (AnimationStateMachine.State state : stateMachine.states.values())
+                    state.transitions.remove(stateTransition);
+            }
+
+            @Override public void run() {}
+        }).setTransitionAction());
     }
 
     @Override
     public void render() {
+        this.highlightedTransition = null;
+
         super.render();
         Vector3 worldMouse3 = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
         Vector2 worldMouse = new Vector2(worldMouse3.x, worldMouse3.y);
@@ -90,7 +114,6 @@ public class StateMachineEditor extends Editor{
         float radius = 50;
         for(AnimationStateMachine.State state : stateMachine.states.values()) {
             HashMap<UUID,Integer> offsets = new HashMap<>();
-            AnimationStateMachine.StateTransition removeTransition = null;
 
             for(AnimationStateMachine.StateTransition transition : state.transitions){
                 AnimationStateMachine.State targetState = stateMachine.states.get(transition.target);
@@ -103,8 +126,7 @@ public class StateMachineEditor extends Editor{
                 if(Intersector.distanceSegmentPoint(first, second, worldMouse) < arrowSize/2){
                     shapeRenderer.setColor(Color.RED);
 
-                    if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))
-                        removeTransition = transition;
+                    this.highlightedTransition = transition;
 
                 } else {
                     shapeRenderer.setColor(Color.WHITE);
@@ -112,8 +134,6 @@ public class StateMachineEditor extends Editor{
                 AnimatedSpritePose.drawArrow(shapeRenderer, first, second, arrowSize);
                 offsets.put(transition.target, offset+1);
             }
-
-            state.transitions.remove(removeTransition);
 
             if(worldMouse.dst(state.position) < radius){
                 shapeRenderer.setColor(Color.RED);
@@ -174,6 +194,8 @@ public class StateMachineEditor extends Editor{
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
 
+            final AnimationStateMachine.StateTransition localStateTransition = this.highlightedTransition;
+
             if (this.rightClickMenu != null) {
                 this.rightClickMenu.remove();
                 this.rightClickMenu = null;
@@ -181,8 +203,10 @@ public class StateMachineEditor extends Editor{
 
             this.rightClickMenu = new Table();
 
-
             for (ActionPair actionPair : actions) {
+                if (actionPair.isTransitionAction || this.highlightedTransition != null)
+                    continue;
+
                 TextButton actionButton = new TextButton(actionPair.name, ISpriteMain.getSkin());
                 actionButton.addListener(new ClickListener() {
                     @Override
@@ -192,6 +216,21 @@ public class StateMachineEditor extends Editor{
                     }
                 });
                 this.rightClickMenu.add(actionButton).row();
+            }
+
+            if (highlightedTransition != null) {
+                for (ActionPair actionPair : actions.stream().filter(action -> action.isTransitionAction).collect(Collectors.toList())) {
+                    TextButton actionButton = new TextButton("Transition: " + actionPair.name, ISpriteMain.getSkin());
+                    actionButton.setColor(Color.ORANGE);
+                    actionButton.addListener(new ClickListener() {
+                        @Override
+                        public void clicked(InputEvent event, float x, float y) {
+                            ((ActionCallback) actionPair.getAction()).run(localStateTransition);
+                            super.clicked(event, x, y);
+                        }
+                    });
+                    this.rightClickMenu.add(actionButton).row();
+                }
             }
 
             Vector3 position = stage.getCamera().unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
@@ -220,13 +259,23 @@ public class StateMachineEditor extends Editor{
         public AnimationStateMachine.State state;
     }
 
+    private interface ActionCallback extends Runnable {
+        void run(AnimationStateMachine.StateTransition stateTransition);
+    }
+
     private static class ActionPair {
         private final String name;
         private final Runnable action;
+        private boolean isTransitionAction;
 
         public ActionPair(String name, Runnable action) {
             this.name = name;
             this.action = action;
+        }
+
+        public ActionPair setTransitionAction() {
+            this.isTransitionAction = true;
+            return this;
         }
 
         public Runnable getAction() {
