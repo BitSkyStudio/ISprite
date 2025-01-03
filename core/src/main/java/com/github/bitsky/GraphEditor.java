@@ -48,6 +48,8 @@ public class GraphEditor extends Editor {
     private TextButton playButton;
     private boolean playing;
 
+    private Table propertiesTable;
+
     public GraphEditor() {
         this.linkInputTexture = new Texture("link_input.png");
         this.linkInputFilledTexture = new Texture("link_input_filled.png");
@@ -88,6 +90,31 @@ public class GraphEditor extends Editor {
         buttonGroup.addActor(playButton);
         this.playTable.add(buttonGroup).row();
 
+        TextButton addPropertyButton = new TextButton("Add Property", ISpriteMain.getSkin());
+        addPropertyButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                TextField input = new TextField("name", ISpriteMain.getSkin());
+                Dialog dialog = new Dialog("Create property", ISpriteMain.getSkin(), "dialog") {
+                    public void result(Object obj) {
+                        if (obj instanceof String) {
+                            addProperty(input.getText());
+                        }
+                    }
+                };
+                dialog.setMovable(false);
+                dialog.button("Cancel");
+                dialog.button("Ok", "");
+                dialog.getContentTable().add(input);
+                dialog.show(stage);
+            }
+        });
+        this.playTable.add(addPropertyButton).row();
+
+        this.propertiesTable = new Table();
+        this.playTable.add(propertiesTable).row();
+        refreshPropertyTable();
+
         setPlaying(false);
 
         rightClickMenu = null;
@@ -120,6 +147,28 @@ public class GraphEditor extends Editor {
         node.window.setPosition(position.x, position.y);
         return node;
     }
+    public void addProperty(String name){
+        InputProperty property = new InputProperty();
+        property.name = name;
+        this.properties.put(property.id, property);
+        refreshPropertyTable();
+    }
+    private void refreshPropertyTable(){
+        propertiesTable.clearChildren();
+        for(InputProperty property : properties.values()){
+            Label name = new Label(property.name, ISpriteMain.getSkin());
+            TextField valueField = new TextField(String.valueOf(property.value), ISpriteMain.getSkin());
+            valueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            valueField.setTextFieldListener((textField1, c) -> {
+                try {
+                    property.value = Float.parseFloat(textField1.getText());
+                } catch(NumberFormatException e){
+                    valueField.setText(String.valueOf(property.value));
+                }
+            });
+            propertiesTable.add(name, valueField).row();
+        }
+    }
 
     @Override
     public void render() {
@@ -132,6 +181,14 @@ public class GraphEditor extends Editor {
                 setPlaying(false);
         }
         this.animationPlayer.pose = finalPoseGraphNode.getInput("Out");
+        for(InputProperty property : properties.values()){
+            if(property.resetValue != null) {
+                if(property.value != property.resetValue) {
+                    property.value = property.resetValue;
+                    refreshPropertyTable();
+                }
+            }
+        }
 
         if(Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)){
             graphStage.getCamera().position.add(-ISpriteMain.getMouseDeltaX(), ISpriteMain.getMouseDeltaY(), 0);
@@ -602,7 +659,7 @@ public class GraphEditor extends Editor {
 
     @Override
     public void resize(int width, int height) {
-        this.stage.getViewport().setWorldSize(width, width/16f*9);
+        graphStage.getViewport().setWorldSize(width, width/16f*9);
         graphStage.getViewport().update(width, height);
         super.resize(width, height);
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, graphStage));
