@@ -311,7 +311,7 @@ public class StateMachineEditor extends Editor{
 
     @Override
     public void resize(int width, int height) {
-        this.stage.getViewport().setWorldSize(width, width/16f*9);
+        //this.stage.getViewport().setWorldSize(width, width/16f*9);
         super.resize(width, height);
     }
 }
