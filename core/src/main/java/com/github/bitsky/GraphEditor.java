@@ -177,6 +177,7 @@ public class GraphEditor extends Editor {
             inputProperty.resetValue = propertyJson.has("resetValue")?propertyJson.getFloat("resetValue"):null;
             properties.put(inputProperty.id, inputProperty);
 ;        }
+        refreshPropertyTable();
     }
 
     public void setPlaying(boolean playing) {
@@ -488,7 +489,11 @@ public class GraphEditor extends Editor {
             return json;
         }
         public void load(JSONObject json){
-            //todo: load inputs + actors (idk how that works)
+            JSONObject inputsJson = json.getJSONObject("inputs");
+            for(String name : inputsJson.keySet()){
+                inputs.put(name, UUID.fromString(inputsJson.getString(name)));
+                inputRegions.get(name).setTexture(linkInputFilledTexture);
+            }
             JSONObject position = json.getJSONObject("position");
             window.setPosition(position.getFloat("x"), position.getFloat("y"));
         }
@@ -520,6 +525,7 @@ public class GraphEditor extends Editor {
         public boolean isLooping;
 
         public float time;
+        private CheckBox loopingCheckBox;
         public AnimatedPoseGraphNode() {
             super("Animated Pose", "KeyFramed animation.", true);
 
@@ -531,7 +537,7 @@ public class GraphEditor extends Editor {
                     ISpriteMain.getInstance().setEditor(new AnimationEditor(animation));
                 }
             });
-            CheckBox loopingCheckBox = new CheckBox("loop", ISpriteMain.getSkin());
+            this.loopingCheckBox = new CheckBox("loop", ISpriteMain.getSkin());
             loopingCheckBox.setChecked(isLooping);
             loopingCheckBox.addListener(new ChangeListener() {
                 @Override
@@ -581,13 +587,14 @@ public class GraphEditor extends Editor {
         public void load(JSONObject json) {
             super.load(json);
             this.isLooping = json.getBoolean("looping");
-            //todo: set checkbox state
+            this.loopingCheckBox.setChecked(isLooping);
             this.animation.load(json.getJSONObject("animation"));
         }
     }
 
     public class BlendPoseGraphNode extends GraphNode{
         public float blendValue;
+        private TextField blendValueField;
         public BlendPoseGraphNode() {
             super("Blend Pose", "Blends two inputs.", true);
             addInput("Pose1");
@@ -596,16 +603,16 @@ public class GraphEditor extends Editor {
             this.blendValue = 0.5f;
             this.window.add(new Label("Blend: ", ISpriteMain.getSkin()));
 
-            TextField textField = new TextField(String.valueOf(blendValue), ISpriteMain.getSkin());
-            textField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
-            textField.setTextFieldListener((textField1, c) -> {
+            this.blendValueField = new TextField(String.valueOf(blendValue), ISpriteMain.getSkin());
+            blendValueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            blendValueField.setTextFieldListener((textField1, c) -> {
                 try {
                     blendValue = Float.parseFloat(textField1.getText());
                 } catch(NumberFormatException e){
-                    textField.setText(String.valueOf(blendValue));
+                    blendValueField.setText(String.valueOf(blendValue));
                 }
             });
-            this.window.add(textField);
+            this.window.add(blendValueField);
         }
 
         @Override
@@ -628,27 +635,28 @@ public class GraphEditor extends Editor {
         public void load(JSONObject json) {
             super.load(json);
             this.blendValue = json.getFloat("blendValue");
-            //todo: update ui
+            blendValueField.setText(String.valueOf(blendValue));
         }
     }
 
     public class MultiplyPoseGraphNode extends GraphNode{
         public float multiplyValue;
+        private TextField multiplyValueField;
         public MultiplyPoseGraphNode() {
             super("Multiply Pose", "Multiplies pose by set value.", true);
             addInput("Pose");
             this.multiplyValue = 1f;
             this.window.add(new Label("Multiply: ", ISpriteMain.getSkin()));
-            TextField textField = new TextField(""+multiplyValue, ISpriteMain.getSkin());
-            textField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
-            textField.setTextFieldListener((textField1, c) -> {
+            this.multiplyValueField = new TextField(""+multiplyValue, ISpriteMain.getSkin());
+            multiplyValueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            multiplyValueField.setTextFieldListener((textField1, c) -> {
                 try {
                     multiplyValue = Float.parseFloat(textField1.getText());
                 } catch(NumberFormatException e){
-                    textField.setText(""+multiplyValue);
+                    multiplyValueField.setText(""+multiplyValue);
                 }
             });
-            this.window.add(textField);
+            this.window.add(multiplyValueField);
         }
 
         @Override
@@ -670,7 +678,7 @@ public class GraphEditor extends Editor {
         public void load(JSONObject json) {
             super.load(json);
             this.multiplyValue = json.getFloat("multiplyValue");
-            //todo: update ui
+            multiplyValueField.setText(String.valueOf(multiplyValue));
         }
     }
 
@@ -694,6 +702,7 @@ public class GraphEditor extends Editor {
 
     public class PlaybackSpeedGraphNode extends GraphNode{
         public float speed;
+        private TextField speedField;
         public PlaybackSpeedGraphNode() {
             super("Playback Speed", "Changes playback speed.", true);
             addInput("Pose");
@@ -701,16 +710,16 @@ public class GraphEditor extends Editor {
             this.speed = 1;
             this.window.add(new Label("Speed: ", ISpriteMain.getSkin()));
 
-            TextField textField = new TextField(String.valueOf(speed), ISpriteMain.getSkin());
-            textField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
-            textField.setTextFieldListener((textField1, c) -> {
+            this.speedField = new TextField(String.valueOf(speed), ISpriteMain.getSkin());
+            speedField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            speedField.setTextFieldListener((textField1, c) -> {
                 try {
                     speed = Float.parseFloat(textField1.getText());
                 } catch(NumberFormatException e){
-                    textField.setText(String.valueOf(speed));
+                    speedField.setText(String.valueOf(speed));
                 }
             });
-            this.window.add(textField);
+            this.window.add(speedField);
         }
 
         @Override
@@ -738,7 +747,7 @@ public class GraphEditor extends Editor {
         public void load(JSONObject json) {
             super.load(json);
             this.speed = json.getFloat("speed");
-            //todo: update ui
+            speedField.setText(String.valueOf(speed));
         }
     }
 
