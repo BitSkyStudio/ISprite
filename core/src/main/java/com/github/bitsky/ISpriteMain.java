@@ -68,52 +68,10 @@ public class ISpriteMain extends ApplicationAdapter {
             }
         }
         if(Gdx.input.isKeyJustPressed(Input.Keys.F1)){
-            NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-            conf.mimeFilter = "application/ispr";
-            conf.intent = NativeFileChooserIntent.SAVE;
-            conf.title = "Save sprite";
-            conf.directory = new FileHandle(".");
-            fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
-                @Override
-                public void onFileChosen(FileHandle fileHandle) {
-                    JSONObject project = new JSONObject();
-                    project.put("sprite", sprite.save());
-                    project.put("graph", graphEditor.save());
-                    fileHandle.writeBytes(project.toString(4).getBytes(), false);
-                }
-                @Override
-                public void onCancellation() {
-
-                }
-                @Override
-                public void onError(Exception e) {
-                    e.printStackTrace();
-                }
-            });
+            save();
         }
         if(Gdx.input.isKeyJustPressed(Input.Keys.F2)){
-            NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-            conf.mimeFilter = "application/ispr";
-            conf.intent = NativeFileChooserIntent.OPEN;
-            conf.title = "Load sprite";
-            conf.directory = new FileHandle(".");
-            fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
-                @Override
-                public void onFileChosen(FileHandle fileHandle) {
-                    JSONObject project = new JSONObject(fileHandle.readString());
-                    sprite.load(project.getJSONObject("sprite"));
-                    graphEditor.load(project.getJSONObject("graph"));
-                    setEditor(new BoneEditor());
-                }
-                @Override
-                public void onCancellation() {
-
-                }
-                @Override
-                public void onError(Exception e) {
-                    e.printStackTrace();
-                }
-            });
+            load();
         }
         this.lastMouse = new Vector2(Gdx.input.getX(), Gdx.input.getY());
     }
@@ -121,6 +79,56 @@ public class ISpriteMain extends ApplicationAdapter {
         this.editor = editor;
         Gdx.input.setInputProcessor(editor);
         editor.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    public void save() {
+        NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+        conf.mimeFilter = "application/ispr";
+        conf.intent = NativeFileChooserIntent.SAVE;
+        conf.title = "Save sprite";
+        conf.directory = new FileHandle(".");
+        fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+            @Override
+            public void onFileChosen(FileHandle fileHandle) {
+                JSONObject project = new JSONObject();
+                project.put("sprite", sprite.save());
+                project.put("graph", graphEditor.save());
+                fileHandle.writeBytes(project.toString(4).getBytes(), false);
+            }
+            @Override
+            public void onCancellation() {
+
+            }
+            @Override
+            public void onError(Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void load() {
+        NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+        conf.mimeFilter = "application/ispr";
+        conf.intent = NativeFileChooserIntent.OPEN;
+        conf.title = "Load sprite";
+        conf.directory = new FileHandle(".");
+        fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+            @Override
+            public void onFileChosen(FileHandle fileHandle) {
+                JSONObject project = new JSONObject(fileHandle.readString());
+                sprite.load(project.getJSONObject("sprite"));
+                graphEditor.load(project.getJSONObject("graph"));
+                setEditor(new BoneEditor());
+            }
+            @Override
+            public void onCancellation() {
+
+            }
+            @Override
+            public void onError(Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override
