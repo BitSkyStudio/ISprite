@@ -77,6 +77,41 @@ public class StateMachineEditor extends Editor{
             }
         }));
 
+        actions.add(new ActionPair("Edit", new ActionCallback() {
+            @Override
+            public void run(AnimationStateMachine.StateTransition stateTransition) {
+                TextField blendTime = new TextField(String.valueOf(stateTransition.blendTime), ISpriteMain.getSkin());
+                blendTime.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+
+                CheckBox requireFinished = new CheckBox("Require Finished", ISpriteMain.getSkin());
+                requireFinished.setChecked(stateTransition.requireFinished);
+
+                SelectBox<EInterpolationFunction> functionSelectBox = new SelectBox<>(ISpriteMain.getSkin());
+                functionSelectBox.setItems(EInterpolationFunction.values());
+                functionSelectBox.setSelected(stateTransition.interpolationFunction);
+
+                Dialog editDialog = new Dialog("Edit", ISpriteMain.getSkin()){
+                    @Override
+                    protected void result(Object object) {
+                        if(object instanceof String){
+                            try {
+                                stateTransition.blendTime = Float.parseFloat(blendTime.getText());
+                            } catch(NumberFormatException e){}
+                            stateTransition.requireFinished = requireFinished.isChecked();
+                            stateTransition.interpolationFunction = functionSelectBox.getSelected();
+                        }
+                    }
+                };
+                editDialog.getContentTable().add(new Label("Blend time: ", ISpriteMain.getSkin()), blendTime).row();
+                editDialog.getContentTable().add(new Label("Interpolation: ", ISpriteMain.getSkin()), functionSelectBox).row();
+                editDialog.getContentTable().add(requireFinished).row();
+                editDialog.button("Ok", "");
+                editDialog.button("Cancel");
+                editDialog.show(stage);
+            }
+            @Override public void run() {}
+        }).setTransitionAction());
+
         actions.add(new ActionPair("Remove", new ActionCallback() {
             @Override
             public void run(AnimationStateMachine.StateTransition stateTransition) {
