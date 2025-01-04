@@ -388,6 +388,7 @@ public class GraphEditor extends Editor {
             window.add(this.verticalGroup);
 
         }
+        public void refresh(){}
         public abstract String getTypeName();
 
         /**
@@ -409,20 +410,23 @@ public class GraphEditor extends Editor {
             toRemove.forEach(this.inputs::remove);
         }
 
-        public void addInput(String name) {
+        public void addInput(String name){
+            addInput(name, name);
+        }
+        public void addInput(String id, String name) {
             HorizontalGroup hgroup = new HorizontalGroup();
-            this.inputFields.put(name, hgroup);
+            this.inputFields.put(id, hgroup);
             hgroup.setName(name);
             TextureRegion textureRegion = new TextureRegion(linkInputTexture);
             Actor dragInput = new Image(textureRegion);
-            this.inputRegions.put(name, textureRegion);
+            this.inputRegions.put(id, textureRegion);
             hgroup.addActor(dragInput);
             hgroup.addActor(new Label(name, ISpriteMain.getSkin()));
 
             dragInput.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    inputs.remove(name);
+                    inputs.remove(id);
                     textureRegion.setTexture(linkInputTexture);
                     super.clicked(event, x, y);
                 }
@@ -436,12 +440,12 @@ public class GraphEditor extends Editor {
                 @Override
                 public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float v, float v1, int i) {
                     ConnectionData output = (ConnectionData) payload.getObject();
-                    inputs.put(name, output.first);
+                    inputs.put(id, output.first);
                     textureRegion.setTexture(linkInputFilledTexture);
                 }
             });
             verticalGroup.addActor(hgroup);
-            this.inputActors.put(name, dragInput);
+            this.inputActors.put(id, dragInput);
         }
 
         public abstract AnimatedSpritePose getOutputPose();
@@ -775,11 +779,15 @@ public class GraphEditor extends Editor {
         public void reset() {
             this.currentState = stateMachine.startState;
             this.transitionId = -1;
+            if(getInputByState(currentState) == null)
+                return;
             getInputByState(currentState).reset();
         }
 
         @Override
         public void tick(float step) {
+            if(getInputByState(currentState) == null)
+                return;
             getInputByState(currentState).tick(step);
             if(transitionId != -1){
                 AnimationStateMachine.StateTransition transition = stateMachine.states.get(currentState).transitions.get(transitionId);
@@ -804,6 +812,8 @@ public class GraphEditor extends Editor {
                     if(!failed){
                         transitionId = i;
                         transitionTime = 0;
+                        if(getInputByState(transition.target) == null)
+                            return;
                         getInputByState(transition.target).reset();
                         break;
                     }
@@ -813,6 +823,8 @@ public class GraphEditor extends Editor {
 
         @Override
         public boolean isFinished() {
+            if(getInputByState(currentState) == null)
+                return true;
             return getInputByState(currentState).isFinished() && stateMachine.states.get(currentState).endState;
         }
 
@@ -824,9 +836,13 @@ public class GraphEditor extends Editor {
         @Override
         public AnimatedSpritePose getOutputPose() {
             GraphNode first = getInputByState(currentState);
+            if(first == null)
+                return BoneEditor.EMPTY_POSE;
             if(transitionId != -1){
                 AnimationStateMachine.StateTransition transition = stateMachine.states.get(currentState).transitions.get(transitionId);
                 GraphNode second = getInputByState(transition.target);
+                if(second == null)
+                    return first.getOutputPose();
                 return first.getOutputPose().lerp(second.getOutputPose(), transition.interpolationFunction.function.apply(transitionTime/transition.blendTime));
             } else {
                 return first.getOutputPose();
@@ -834,7 +850,10 @@ public class GraphEditor extends Editor {
         }
 
         public GraphNode getInputByState(UUID state) {
-            throw new IllegalStateException("Implement");
+            UUID id = inputs.get(state.toString());
+            if(id != null)
+                return nodes.get(id);
+            return null;
         }
 
         @Override
@@ -848,6 +867,18 @@ public class GraphEditor extends Editor {
             super.load(json);
             this.stateMachine.load(json.getJSONObject("stateMachine"));
         }
+
+        @Override
+        public void refresh() {
+            this.inputFields.values().forEach(Actor::remove);
+            this.inputFields.clear();
+            this.inputRegions.clear();
+            this.inputActors.clear();
+            for(Map.Entry<UUID, AnimationStateMachine.State> entry : stateMachine.states.entrySet()){
+                addInput(entry.getKey().toString(), entry.getValue().name);
+            }
+            window.pack();
+        }
     }
 
     @Override
@@ -856,6 +887,9 @@ public class GraphEditor extends Editor {
         graphStage.getViewport().update(width, height);
         super.resize(width, height);
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, graphStage));
+        for(GraphNode node : nodes.values()){
+            node.refresh();
+        }
     }
 
     @Override
