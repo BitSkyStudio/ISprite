@@ -127,6 +127,10 @@ public class StateMachineEditor extends Editor{
     public void render() {
         AnimationStateMachine.StateTransition highlightedTransition = null;
 
+        if(Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)){
+            ISpriteMain.getInstance().setEditor(ISpriteMain.getInstance().graphEditor);
+        }
+
         super.render();
         Vector3 worldMouse3 = camera.unproject(new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
         Vector2 worldMouse = new Vector2(worldMouse3.x, worldMouse3.y);

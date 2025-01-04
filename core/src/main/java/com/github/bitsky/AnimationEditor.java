@@ -68,6 +68,9 @@ public class AnimationEditor extends Editor {
     @Override
     public void render() {
         super.render();
+        if(Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)){
+            ISpriteMain.getInstance().setEditor(ISpriteMain.getInstance().graphEditor);
+        }
         this.keyFramesWindow.setAnimationStepTime(this.time);
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
         AnimatedSpritePose pose = animation.getPose(time);
