@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Align;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class StateMachineEditor extends Editor{
+public class StateMachineEditor extends Editor {
     public final AnimationStateMachine stateMachine;
     private UUID moving;
     private UUID connecting;
@@ -93,10 +94,10 @@ public class StateMachineEditor extends Editor{
                 Dialog editDialog = new Dialog("Edit", ISpriteMain.getSkin()){
                     @Override
                     protected void result(Object object) {
-                        if(object instanceof String){
+                        if(object instanceof String) {
                             try {
                                 stateTransition.blendTime = Float.parseFloat(blendTime.getText());
-                            } catch(NumberFormatException e){}
+                            } catch(NumberFormatException ignored){}
                             stateTransition.requireFinished = requireFinished.isChecked();
                             stateTransition.interpolationFunction = functionSelectBox.getSelected();
                         }
@@ -105,6 +106,17 @@ public class StateMachineEditor extends Editor{
                 editDialog.getContentTable().add(new Label("Blend time: ", ISpriteMain.getSkin()), blendTime).row();
                 editDialog.getContentTable().add(new Label("Interpolation: ", ISpriteMain.getSkin()), functionSelectBox).row();
                 editDialog.getContentTable().add(requireFinished).row();
+
+                TextButton conditionEditorButton = new TextButton("Condition Edit", ISpriteMain.getSkin());
+                conditionEditorButton.addListener(new ClickListener() {
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        stage.addActor(new StateConditionEditor(null));
+                        super.clicked(event, x, y);
+                    }
+                });
+                editDialog.getContentTable().add(conditionEditorButton);
+
                 editDialog.button("Ok", "");
                 editDialog.button("Cancel");
                 editDialog.show(stage);
@@ -267,6 +279,10 @@ public class StateMachineEditor extends Editor{
             this.rightClickPair = getNearestStateToCursor();
         }
 
+        if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
+            this.stage.addActor(new StateConditionEditor(null));
+        }
+
         stage.draw();
     }
 
@@ -282,6 +298,79 @@ public class StateMachineEditor extends Editor{
         pair.distance = pair.state.position.dst(worldMouse);
 
         return pair;
+    }
+
+    public static class StateConditionEditor extends Window {
+
+        public StateConditionEditor(AnimationStateMachine.StateTransition stateTransition) {
+            super("Conditions", ISpriteMain.getSkin());
+            HorizontalGroup actionButtons = new HorizontalGroup();
+            actionButtons.rowAlign(Align.left);
+            Table table = new Table();
+
+            table.columnDefaults(3);
+
+            TextButton addIntegerButton = new TextButton("Add Integer", this.getSkin());
+            actionButtons.addActor(addIntegerButton);
+            TextButton addBooleanButton = new TextButton("Add Boolean", this.getSkin());
+            actionButtons.addActor(addBooleanButton);
+
+            addIntegerButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    SelectBox<LogicCondition> conditionSelectBox = new SelectBox<>(getSkin());
+                    TextField conditionInputField = new TextField("Condition", getSkin());
+                    TextField variableField = new TextField("", getSkin());
+                    conditionSelectBox.setItems(LogicCondition.values());
+                    table.add(conditionInputField);
+                    table.add(conditionSelectBox);
+                    table.add(variableField).row();
+
+                    pack();
+                }
+            });
+
+            addBooleanButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    SelectBox<LogicCondition> conditionSelectBox = new SelectBox<>(getSkin());
+                    TextField conditionInputField = new TextField("Condition", getSkin());
+                    CheckBox checkBox = new CheckBox("", getSkin());
+                    conditionSelectBox.setItems(LogicCondition.values());
+                    table.add(conditionInputField);
+                    table.add(conditionSelectBox);
+                    table.add(checkBox).row();
+
+                    pack();
+                }
+            });
+
+            this.add(actionButtons).left().row();
+            this.add(table).left();
+            this.setResizable(true);
+
+            this.pack();
+        }
+
+    }
+
+    public static enum LogicCondition {
+        EQUALS("=="),
+        DOESNT_EQUAL("!="),
+        BIGGER_THAN(">"),
+        BIGGER_THAN_EQUALS(">="),
+        SMALLER_THAN("<"),
+        SMALLER_THAN_EQUALS("<=");
+
+        final String translation;
+        LogicCondition(String translation) {
+            this.translation = translation;
+        }
+
+        @Override
+        public String toString() {
+            return translation;
+        }
     }
 
     private static class StateDistancePair {
