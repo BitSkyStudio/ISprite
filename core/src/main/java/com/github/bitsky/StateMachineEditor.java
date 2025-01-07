@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
@@ -331,16 +332,34 @@ public class StateMachineEditor extends Editor {
             addIntegerButton.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
+                    AnimationStateMachine.TransitionCondition transitionCondition = new AnimationStateMachine.TransitionCondition(UUID.randomUUID(), 0f, AnimationStateMachine.EComparator.Equal);
+
                     SelectBox<AnimationStateMachine.EComparator> conditionSelectBox = new SelectBox<>(getSkin());
-                    TextField conditionInputField = new TextField("Condition", getSkin());
-                    TextField variableField = new TextField("", getSkin());
+                    TextField conditionInputField = new TextField(transitionCondition.propertyId.toString(), getSkin());
+                    conditionInputField.setDisabled(true);
+
+                    TextField variableField = new TextField(String.valueOf(transitionCondition.value), getSkin());
+                    variableField.addListener(new InputListener() {
+                        @Override
+                        public boolean keyTyped(InputEvent event, char character) {
+                            try {
+                                transitionCondition.value = Float.parseFloat(variableField.getText());
+                            } catch (NumberFormatException ignored) {
+                                transitionCondition.value = 0;
+                            }
+                            return super.keyTyped(event, character);
+                        }
+                    });
+
                     conditionSelectBox.setItems(AnimationStateMachine.EComparator.values());
                     table.add(conditionInputField);
                     table.add(conditionSelectBox);
                     table.add(variableField).row();
 
-                    pack();
+                    assert stateTransition != null;
+                    stateTransition.conditions.add(transitionCondition);
 
+                    pack();
                 }
             });
             /*
