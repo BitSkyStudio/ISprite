@@ -8,9 +8,11 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 
@@ -315,12 +317,44 @@ public class StateMachineEditor extends Editor {
             if (stateTransition != null) {
                 for (AnimationStateMachine.TransitionCondition transitionCondition : stateTransition.conditions) {
                     SelectBox<AnimationStateMachine.EComparator> conditionSelectBox = new SelectBox<>(getSkin());
-                    TextField conditionInputField = new TextField(transitionCondition.propertyId.toString(), getSkin());
+                    SelectBox<UUID> conditionInputField = new SelectBox<>(getSkin()){
+                        @Override
+                        protected String toString(UUID item) {
+                            return ISpriteMain.getInstance().graphEditor.properties.get(item).name;
+                        }
+                    };
+                    conditionInputField.setItems(ISpriteMain.getInstance().graphEditor.properties.keySet().toArray(UUID[]::new));
+                    conditionInputField.setSelected(transitionCondition.propertyId);
                     TextField variableField = new TextField(String.valueOf(transitionCondition.value), getSkin());
                     conditionSelectBox.setItems(AnimationStateMachine.EComparator.values());
+                    conditionSelectBox.setSelected(transitionCondition.comparator);
                     table.add(conditionInputField);
                     table.add(conditionSelectBox);
                     table.add(variableField).row();
+
+                    variableField.addListener(new InputListener() {
+                        @Override
+                        public boolean keyTyped(InputEvent event, char character) {
+                            try {
+                                transitionCondition.value = Float.parseFloat(variableField.getText());
+                            } catch (NumberFormatException ignored) {
+                                transitionCondition.value = 0;
+                            }
+                            return super.keyTyped(event, character);
+                        }
+                    });
+                    conditionInputField.addListener(new ChangeListener() {
+                        @Override
+                        public void changed(ChangeEvent changeEvent, Actor actor) {
+                            transitionCondition.propertyId = conditionInputField.getSelected();
+                        }
+                    });
+                    conditionSelectBox.addListener(new ChangeListener() {
+                        @Override
+                        public void changed(ChangeEvent changeEvent, Actor actor) {
+                            transitionCondition.comparator = conditionSelectBox.getSelected();
+                        }
+                    });
 
                     pack();
                 }
@@ -332,11 +366,19 @@ public class StateMachineEditor extends Editor {
             addIntegerButton.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    AnimationStateMachine.TransitionCondition transitionCondition = new AnimationStateMachine.TransitionCondition(UUID.randomUUID(), 0f, AnimationStateMachine.EComparator.Equal);
+                    AnimationStateMachine.TransitionCondition transitionCondition = new AnimationStateMachine.TransitionCondition(null, 0f, AnimationStateMachine.EComparator.Equal);
+
+                    SelectBox<UUID> conditionInputField = new SelectBox<>(getSkin()){
+                        @Override
+                        protected String toString(UUID item) {
+                            return ISpriteMain.getInstance().graphEditor.properties.get(item).name;
+                        }
+                    };
+                    conditionInputField.setItems(ISpriteMain.getInstance().graphEditor.properties.keySet().toArray(UUID[]::new));
+                    //conditionInputField.setSelected(transitionCondition.propertyId);
+
 
                     SelectBox<AnimationStateMachine.EComparator> conditionSelectBox = new SelectBox<>(getSkin());
-                    TextField conditionInputField = new TextField(transitionCondition.propertyId.toString(), getSkin());
-                    conditionInputField.setDisabled(true);
 
                     TextField variableField = new TextField(String.valueOf(transitionCondition.value), getSkin());
                     variableField.addListener(new InputListener() {
@@ -348,6 +390,18 @@ public class StateMachineEditor extends Editor {
                                 transitionCondition.value = 0;
                             }
                             return super.keyTyped(event, character);
+                        }
+                    });
+                    conditionInputField.addListener(new ChangeListener() {
+                        @Override
+                        public void changed(ChangeEvent changeEvent, Actor actor) {
+                            transitionCondition.propertyId = conditionInputField.getSelected();
+                        }
+                    });
+                    conditionSelectBox.addListener(new ChangeListener() {
+                        @Override
+                        public void changed(ChangeEvent changeEvent, Actor actor) {
+                            transitionCondition.comparator = conditionSelectBox.getSelected();
                         }
                     });
 

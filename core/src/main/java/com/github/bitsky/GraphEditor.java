@@ -38,7 +38,7 @@ public class GraphEditor extends Editor {
     private DragAndDrop dragAndDrop;
     private Table rightClickMenu;
     private HashMap<String, Supplier<GraphNode>> nodeTypes;
-    private HashMap<UUID,InputProperty> properties;
+    public HashMap<UUID,InputProperty> properties;
 
     private FinalPoseGraphNode finalPoseGraphNode;
 

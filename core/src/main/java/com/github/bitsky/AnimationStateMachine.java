@@ -149,9 +149,9 @@ public class AnimationStateMachine {
         }
     }
     public static class TransitionCondition{
-        public final UUID propertyId;
+        public UUID propertyId;
         public float value;
-        public final EComparator comparator;
+        public EComparator comparator;
         public TransitionCondition(UUID propertyId, float value, EComparator comparator) {
             this.propertyId = propertyId;
             this.value = value;
