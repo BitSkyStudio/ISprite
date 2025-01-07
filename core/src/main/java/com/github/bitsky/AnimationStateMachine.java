@@ -193,5 +193,10 @@ public class AnimationStateMachine {
             }
             throw new IllegalStateException("unreachable");
         }
+
+        @Override
+        public String toString() {
+            return this.display;
+        }
     }
 }

@@ -111,7 +111,7 @@ public class StateMachineEditor extends Editor {
                 conditionEditorButton.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        stage.addActor(new StateConditionEditor(null));
+                        stage.addActor(new StateConditionEditor(stateTransition));
                         super.clicked(event, x, y);
                     }
                 });
@@ -304,73 +304,76 @@ public class StateMachineEditor extends Editor {
 
         public StateConditionEditor(AnimationStateMachine.StateTransition stateTransition) {
             super("Conditions", ISpriteMain.getSkin());
+
             HorizontalGroup actionButtons = new HorizontalGroup();
             actionButtons.rowAlign(Align.left);
             Table table = new Table();
 
             table.columnDefaults(3);
 
-            TextButton addIntegerButton = new TextButton("Add Integer", this.getSkin());
-            actionButtons.addActor(addIntegerButton);
-            TextButton addBooleanButton = new TextButton("Add Boolean", this.getSkin());
-            actionButtons.addActor(addBooleanButton);
-
-            addIntegerButton.addListener(new ClickListener() {
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    SelectBox<LogicCondition> conditionSelectBox = new SelectBox<>(getSkin());
-                    TextField conditionInputField = new TextField("Condition", getSkin());
-                    TextField variableField = new TextField("", getSkin());
-                    conditionSelectBox.setItems(LogicCondition.values());
+            if (stateTransition != null) {
+                for (AnimationStateMachine.TransitionCondition transitionCondition : stateTransition.conditions) {
+                    SelectBox<AnimationStateMachine.EComparator> conditionSelectBox = new SelectBox<>(getSkin());
+                    TextField conditionInputField = new TextField(transitionCondition.propertyId.toString(), getSkin());
+                    TextField variableField = new TextField(String.valueOf(transitionCondition.value), getSkin());
+                    conditionSelectBox.setItems(AnimationStateMachine.EComparator.values());
                     table.add(conditionInputField);
                     table.add(conditionSelectBox);
                     table.add(variableField).row();
 
                     pack();
                 }
-            });
+            }
 
+            TextButton addIntegerButton = new TextButton("Add", this.getSkin());
+            actionButtons.addActor(addIntegerButton);
+
+            addIntegerButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    SelectBox<AnimationStateMachine.EComparator> conditionSelectBox = new SelectBox<>(getSkin());
+                    TextField conditionInputField = new TextField("Condition", getSkin());
+                    TextField variableField = new TextField("", getSkin());
+                    conditionSelectBox.setItems(AnimationStateMachine.EComparator.values());
+                    table.add(conditionInputField);
+                    table.add(conditionSelectBox);
+                    table.add(variableField).row();
+
+                    pack();
+
+                }
+            });
+            /*
             addBooleanButton.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    SelectBox<LogicCondition> conditionSelectBox = new SelectBox<>(getSkin());
+                    SelectBox<AnimationStateMachine.EComparator> conditionSelectBox = new SelectBox<>(getSkin());
                     TextField conditionInputField = new TextField("Condition", getSkin());
                     CheckBox checkBox = new CheckBox("", getSkin());
-                    conditionSelectBox.setItems(LogicCondition.values());
+                    conditionSelectBox.setItems(AnimationStateMachine.EComparator.values());
                     table.add(conditionInputField);
                     table.add(conditionSelectBox);
                     table.add(checkBox).row();
 
                     pack();
                 }
-            });
+            });*/
 
             this.add(actionButtons).left().row();
             this.add(table).left();
             this.setResizable(true);
 
+            TextButton okButton = new TextButton("Ok", getSkin());
+            okButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    remove();
+                }
+            });
+            this.add(okButton).row();
             this.pack();
         }
 
-    }
-
-    public static enum LogicCondition {
-        EQUALS("=="),
-        DOESNT_EQUAL("!="),
-        BIGGER_THAN(">"),
-        BIGGER_THAN_EQUALS(">="),
-        SMALLER_THAN("<"),
-        SMALLER_THAN_EQUALS("<=");
-
-        final String translation;
-        LogicCondition(String translation) {
-            this.translation = translation;
-        }
-
-        @Override
-        public String toString() {
-            return translation;
-        }
     }
 
     private static class StateDistancePair {
