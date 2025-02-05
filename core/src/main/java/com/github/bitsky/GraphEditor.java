@@ -163,6 +163,7 @@ public class GraphEditor extends Editor {
         for(String id : nodesJson.keySet()){
             JSONObject nodeJson = nodesJson.getJSONObject(id);
             GraphNode node = nodeTypes.get(nodeJson.getString("type")).get();
+            node.id = UUID.fromString(id);
             node.load(nodeJson);
             addNode(node, new Vector2(node.window.getX(), node.window.getY()));
         }
@@ -183,6 +184,7 @@ public class GraphEditor extends Editor {
     public void setPlaying(boolean playing) {
         this.playing = playing;
         this.playButton.setText(playing?"Pause":"Play");
+        this.finalPoseGraphNode.reset();
     }
 
     public void removeNode(GraphNode node) {
@@ -318,7 +320,7 @@ public class GraphEditor extends Editor {
     }
 
     public abstract class GraphNode {
-        public final UUID id;
+        public UUID id;
         public final Window window;
         public final HashMap<String,UUID> inputs;
         public final HashMap<String,Actor> inputActors;
@@ -773,6 +775,8 @@ public class GraphEditor extends Editor {
                 }
             });
             this.verticalGroup.addActor(enterButton);
+            reset();
+            refresh();
         }
 
         @Override
@@ -802,7 +806,7 @@ public class GraphEditor extends Editor {
                     AnimationStateMachine.StateTransition transition = transitions.get(i);
                     boolean failed = false;
                     for(AnimationStateMachine.TransitionCondition condition : transition.conditions){
-                        if(!condition.comparator.passes(properties.get(condition.propertyId).value, condition.value)){
+                        if(condition.propertyId == null || properties.get(condition.propertyId) == null || !condition.comparator.passes(properties.get(condition.propertyId).value, condition.value)){
                             failed = true;
                             break;
                         }
@@ -864,8 +868,9 @@ public class GraphEditor extends Editor {
         }
         @Override
         public void load(JSONObject json) {
-            super.load(json);
             this.stateMachine.load(json.getJSONObject("stateMachine"));
+            refresh();
+            super.load(json);
         }
 
         @Override

@@ -398,6 +398,7 @@ public class StateMachineEditor extends Editor {
                             transitionCondition.propertyId = conditionInputField.getSelected();
                         }
                     });
+                    transitionCondition.propertyId = conditionInputField.getSelected();
                     conditionSelectBox.addListener(new ChangeListener() {
                         @Override
                         public void changed(ChangeEvent changeEvent, Actor actor) {

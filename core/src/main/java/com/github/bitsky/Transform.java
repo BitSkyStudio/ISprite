@@ -24,8 +24,8 @@ public class Transform {
     }
     public Transform lerp(Transform other, float v){
         Vector2 lerpedTranslation = (this.translation!=null&&other.translation!=null)?this.translation.cpy().lerp(other.translation, v):(this.translation!=null?this.translation:other.translation);
-        float lerpedRotation = (this.rotation!=null&&other.rotation!=null)?MathUtils.lerpAngle(this.rotation, other.rotation, v):(this.rotation!=null?this.rotation:other.rotation);
-        float lerpedScale = (this.scale!=null&&other.scale!=null)?MathUtils.lerp(this.scale, other.scale, v):(this.scale!=null?this.scale:other.scale);
+        Float lerpedRotation = (this.rotation!=null&&other.rotation!=null)?Float.valueOf(MathUtils.lerpAngle(this.rotation, other.rotation, v)):(this.rotation!=null?this.rotation:other.rotation);
+        Float lerpedScale = (this.scale!=null&&other.scale!=null)?Float.valueOf(MathUtils.lerp(this.scale, other.scale, v)):(this.scale!=null?this.scale:other.scale);
         return new Transform(lerpedTranslation, lerpedRotation, lerpedScale);
     }
     public Transform multiply(float s) {
@@ -37,8 +37,8 @@ public class Transform {
 
     public Transform add(Transform other){
         Vector2 addedTranslation = (this.translation!=null&&other.translation!=null)?this.translation.cpy().add(other.translation):(this.translation!=null?this.translation:other.translation);
-        float addedRotation = (this.rotation!=null&&other.rotation!=null)?this.rotation+other.rotation:(this.rotation!=null?this.rotation:other.rotation);
-        float addedScale = (this.scale!=null&&other.scale!=null)?this.scale+other.scale:(this.scale!=null?this.scale:other.scale);
+        Float addedRotation = (this.rotation!=null&&other.rotation!=null)?Float.valueOf(this.rotation+other.rotation):(this.rotation!=null?this.rotation:other.rotation);
+        Float addedScale = (this.scale!=null&&other.scale!=null)?Float.valueOf(this.scale+other.scale):(this.scale!=null?this.scale:other.scale);
         return new Transform(addedTranslation, addedRotation, addedScale);
     }
     public JSONObject save(){
