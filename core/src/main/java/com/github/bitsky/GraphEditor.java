@@ -818,7 +818,8 @@ public class GraphEditor extends Editor {
                         transitionTime = 0;
                         if(getInputByState(transition.target) == null)
                             return;
-                        getInputByState(transition.target).reset();
+                        if(transition.resets)
+                            getInputByState(transition.target).reset();
                         break;
                     }
                 }

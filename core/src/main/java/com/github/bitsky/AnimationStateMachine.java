@@ -111,12 +111,14 @@ public class AnimationStateMachine {
         public EInterpolationFunction interpolationFunction;
         public final ArrayList<TransitionCondition> conditions;
         public boolean requireFinished;
+        public boolean resets;
         public StateTransition(UUID target) {
             this.target = target;
             this.blendTime = 0.2f;
             this.interpolationFunction = EInterpolationFunction.Linear;
             this.conditions = new ArrayList<>();
             this.requireFinished = false;
+            this.resets = true;
         }
         public JSONObject save(){
             JSONObject json = new JSONObject();
@@ -133,6 +135,7 @@ public class AnimationStateMachine {
             }
             json.put("conditions", conditionsJson);
             json.put("requireFinished", requireFinished);
+            json.put("resets", resets);
             return json;
         }
         public void load(JSONObject json){
@@ -146,6 +149,7 @@ public class AnimationStateMachine {
                 this.conditions.add(new TransitionCondition(UUID.fromString(condition.getString("property")), condition.getFloat("value"), EComparator.byName(condition.getString("cmp"))));
             }
             this.requireFinished = json.getBoolean("requireFinished");
+            this.resets = json.getBoolean("resets");
         }
     }
     public static class TransitionCondition{

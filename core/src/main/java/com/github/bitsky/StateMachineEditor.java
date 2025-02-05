@@ -90,6 +90,9 @@ public class StateMachineEditor extends Editor {
                 CheckBox requireFinished = new CheckBox("Require Finished", ISpriteMain.getSkin());
                 requireFinished.setChecked(stateTransition.requireFinished);
 
+                CheckBox resetsCheckbox = new CheckBox("Resets", ISpriteMain.getSkin());
+                resetsCheckbox.setChecked(stateTransition.resets);
+
                 SelectBox<EInterpolationFunction> functionSelectBox = new SelectBox<>(ISpriteMain.getSkin());
                 functionSelectBox.setItems(EInterpolationFunction.values());
                 functionSelectBox.setSelected(stateTransition.interpolationFunction);
@@ -102,6 +105,7 @@ public class StateMachineEditor extends Editor {
                                 stateTransition.blendTime = Float.parseFloat(blendTime.getText());
                             } catch(NumberFormatException ignored){}
                             stateTransition.requireFinished = requireFinished.isChecked();
+                            stateTransition.resets = resetsCheckbox.isChecked();
                             stateTransition.interpolationFunction = functionSelectBox.getSelected();
                         }
                     }
@@ -109,6 +113,7 @@ public class StateMachineEditor extends Editor {
                 editDialog.getContentTable().add(new Label("Blend time: ", ISpriteMain.getSkin()), blendTime).row();
                 editDialog.getContentTable().add(new Label("Interpolation: ", ISpriteMain.getSkin()), functionSelectBox).row();
                 editDialog.getContentTable().add(requireFinished).row();
+                editDialog.getContentTable().add(resetsCheckbox).row();
 
                 TextButton conditionEditorButton = new TextButton("Condition Edit", ISpriteMain.getSkin());
                 conditionEditorButton.addListener(new ClickListener() {
