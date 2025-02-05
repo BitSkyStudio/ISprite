@@ -182,7 +182,7 @@ public class BoneEditor extends Editor {
         }
 
         if(Gdx.input.isKeyPressed(Input.Keys.B) && selectedImage != null){
-            float speed = 0.5f * Gdx.graphics.getDeltaTime();
+            float speed = 0.5f * Gdx.graphics.getDeltaTime() * (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)?3:1);
             Matrix4 matrix = selectedImage.getTransformMatrix();
             for(VertexedImage.Vertex vertex : selectedImage.points) {
                 Vector3 pos = new Vector3(vertex.position.x, vertex.position.y, 0);
@@ -193,6 +193,14 @@ public class BoneEditor extends Editor {
                     vertex.addWeight(tree.getSelection().getLastSelected().getValue().id, speed/tree.getSelection().size());
                 }
             }
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.H) && selectedImage != null){
+            Matrix4 matrix = selectedImage.getTransformMatrix();
+            selectedImage.points.removeIf(vertex -> {
+                Vector3 pos = new Vector3(vertex.position.x, vertex.position.y, 0);
+                pos.prj(matrix);
+                return pos.dst(worldMouse3) < 10f;
+            });
         }
         if(Gdx.input.isKeyPressed(Input.Keys.N) && selectedImage != null){
             selectedImage.transform.translation.add(ISpriteMain.getMouseDeltaX(), -ISpriteMain.getMouseDeltaY());
