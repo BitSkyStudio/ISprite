@@ -131,6 +131,7 @@ public class GraphEditor extends Editor {
         nodeTypes.put("Playback Speed", PlaybackSpeedGraphNode::new);
         nodeTypes.put("Add Pose", AddPoseGraphNode::new);
         nodeTypes.put("State Machine", StateGraphNode::new);
+        nodeTypes.put("Symmetry Constraint", SymmetryConstraintGraphNode::new);
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();
@@ -709,6 +710,101 @@ public class GraphEditor extends Editor {
         }
     }
 
+    public class SymmetryConstraintGraphNode extends GraphNode{
+        private SelectBox<UUID> projected;
+        private SelectBox<UUID> center;
+        private SelectBox<UUID> target;
+        public SymmetryConstraintGraphNode() {
+            super("Symmetry Constraint", "Symmetrical constraint.", true);
+            addInput("Input");
+            this.projected = new SelectBox<>(ISpriteMain.getSkin()){
+                @Override
+                public String toString(UUID object) {
+                    return ISpriteMain.getInstance().sprite.bones.get(object).name;
+                }
+            };
+            this.center = new SelectBox<>(ISpriteMain.getSkin()){
+                @Override
+                public String toString(UUID object) {
+                    return ISpriteMain.getInstance().sprite.bones.get(object).name;
+                }
+            };
+            this.target = new SelectBox<>(ISpriteMain.getSkin()){
+                @Override
+                public String toString(UUID object) {
+                    return ISpriteMain.getInstance().sprite.bones.get(object).name;
+                }
+            };
+            HorizontalGroup projectedGroup = new HorizontalGroup();
+            projectedGroup.addActor(new Label("projected: ", ISpriteMain.getSkin()));
+            projectedGroup.addActor(projected);
+            verticalGroup.addActor(projectedGroup);
+
+            HorizontalGroup centerGroup = new HorizontalGroup();
+            centerGroup.addActor(new Label("center: ", ISpriteMain.getSkin()));
+            centerGroup.addActor(center);
+            verticalGroup.addActor(centerGroup);
+
+            HorizontalGroup targetGroup = new HorizontalGroup();
+            targetGroup.addActor(new Label("target: ", ISpriteMain.getSkin()));
+            targetGroup.addActor(target);
+            verticalGroup.addActor(targetGroup);
+            refresh();
+        }
+
+        @Override
+        public void refresh() {
+            UUID[] items = ISpriteMain.getInstance().sprite.bones.keySet().toArray(UUID[]::new);
+            this.projected.setItems(items);
+            this.center.setItems(items);
+            this.target.setItems(items);
+        }
+
+        @Override
+        public String getTypeName() {
+            return "Symmetry Constraint";
+        }
+
+        @Override
+        public AnimatedSpritePose getOutputPose() {
+            AnimatedSpritePose pose = getInput("Input");
+            UUID projected = this.projected.getSelected();
+            UUID center = this.center.getSelected();
+            UUID target = this.target.getSelected();
+            if(projected == null || center == null || target == null || projected == center || center == target || target == projected)
+                return pose;
+            Transform pt = pose.boneTransforms.get(projected);
+            if(pt != null) {
+                pt.translation = null;
+            } else {
+                pt = new Transform();
+                pose.boneTransforms.put(projected, pt);
+            }
+            HashMap<UUID, Transform> transforms = pose.getBoneTransforms(ISpriteMain.getInstance().sprite, new Transform().lock());
+            Vector2 intendedPosition = transforms.get(center).translation.cpy().scl(2).sub(transforms.get(target).translation);
+            Transform parentTransform = transforms.get(ISpriteMain.getInstance().sprite.bones.get(projected).parent);
+            pt.translation = intendedPosition.rotateRad(-parentTransform.rotation).scl(1/parentTransform.scale).sub(parentTransform.translation);
+            return pose;
+        }
+
+        @Override
+        public void load(JSONObject json) {
+            super.load(json);
+            this.target.setSelected(UUID.fromString(json.getString("target")));
+            this.center.setSelected(UUID.fromString(json.getString("center")));
+            this.projected.setSelected(UUID.fromString(json.getString("projected")));
+        }
+
+        @Override
+        public JSONObject save() {
+            JSONObject json = super.save();
+            json.put("target", target.getSelected());
+            json.put("center", center.getSelected());
+            json.put("projected", projected.getSelected());
+            return json;
+        }
+    }
+
     public class PlaybackSpeedGraphNode extends GraphNode{
         public float speed;
         private TextField speedField;
@@ -930,7 +1026,9 @@ public class GraphEditor extends Editor {
         public AnimatedSpritePose pose;
         public Vector2 offset;
         public float zoom;
+        private Texture background;
         public AnimationPlayerWidget() {
+            this.background = new Texture("background.png");
             this.polygonSpriteBatch = new PolygonSpriteBatch();
             this.pose = BoneEditor.EMPTY_POSE;
             this.offset = new Vector2(0, 0);
@@ -958,7 +1056,7 @@ public class GraphEditor extends Editor {
         @Override
         public void draw(Batch batch, float parentAlpha) {
             super.draw(batch, parentAlpha);
-            batch.draw(linkInputTexture, getX(), getY(), getMinWidth(), getMinHeight());
+            batch.draw(background, getX(), getY(), getMinWidth(), getMinHeight());
             batch.end();
             polygonSpriteBatch.setProjectionMatrix(batch.getProjectionMatrix());
             polygonSpriteBatch.begin();
