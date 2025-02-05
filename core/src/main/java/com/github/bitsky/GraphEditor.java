@@ -468,10 +468,10 @@ public class GraphEditor extends Editor {
         }
         public boolean isFinished() {
             for(UUID input : inputs.values()){
-                if(!nodes.get(input).isFinished())
-                    return false;
+                if(nodes.get(input).isFinished())
+                    return true;
             }
-            return true;
+            return inputs.isEmpty();
         }
         public boolean hasOutput() {
             return true;
