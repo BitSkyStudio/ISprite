@@ -9,11 +9,13 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -71,6 +73,7 @@ public class GraphEditor extends Editor {
         this.playTable.left();
         this.stage.addActor(playTable);
         this.animationPlayer = new AnimationPlayerWidget();
+        this.stage.setScrollFocus(animationPlayer);
         this.playTable.add(animationPlayer).row();
         HorizontalGroup buttonGroup = new HorizontalGroup();
         TextButton resetButton = new TextButton("Reset", ISpriteMain.getSkin());
@@ -925,9 +928,32 @@ public class GraphEditor extends Editor {
     public class AnimationPlayerWidget extends Widget{
         private final PolygonSpriteBatch polygonSpriteBatch;
         public AnimatedSpritePose pose;
+        public Vector2 offset;
+        public float zoom;
         public AnimationPlayerWidget() {
             this.polygonSpriteBatch = new PolygonSpriteBatch();
             this.pose = BoneEditor.EMPTY_POSE;
+            this.offset = new Vector2(0, 0);
+            addListener(new InputListener(){
+                @Override
+                public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                    offset.x += ISpriteMain.getMouseDeltaX();
+                    offset.y -= ISpriteMain.getMouseDeltaY();
+                }
+
+                @Override
+                public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
+                    zoom -= amountY/10f;
+                    zoom = Math.min(Math.max(zoom, 0.5f), 2f);
+                    return true;
+                }
+
+                @Override
+                public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                    return true;
+                }
+            });
+            this.zoom = 1;
         }
         @Override
         public void draw(Batch batch, float parentAlpha) {
@@ -938,10 +964,11 @@ public class GraphEditor extends Editor {
             polygonSpriteBatch.begin();
             Rectangle scissors = new Rectangle();
             Rectangle clipBounds = new Rectangle(getX(),getY(),getMinWidth(),getMinHeight());
-            ScissorStack.calculateScissors(stage.getCamera(), polygonSpriteBatch.getTransformMatrix(), clipBounds, scissors);
+            ScissorStack.calculateScissors(stage.getCamera(), new Matrix4(), clipBounds, scissors);
+            polygonSpriteBatch.setTransformMatrix(new Matrix4().scale(zoom, zoom, 1));
             if (ScissorStack.pushScissors(scissors)) {
                 for(VertexedImage image : ISpriteMain.getInstance().sprite.images)
-                    image.draw(polygonSpriteBatch, pose, getX(), getY());
+                    image.draw(polygonSpriteBatch, pose, getX()/zoom + offset.x, getY()/zoom + offset.y);
                 polygonSpriteBatch.flush();
                 ScissorStack.popScissors();
             }
