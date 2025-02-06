@@ -1,5 +1,8 @@
 package com.github.bitsky;
 
+import au.edu.federation.caliko.FabrikBone2D;
+import au.edu.federation.caliko.FabrikChain2D;
+import au.edu.federation.utils.Vec2f;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -22,13 +25,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class GraphEditor extends Editor {
@@ -132,6 +131,7 @@ public class GraphEditor extends Editor {
         nodeTypes.put("Add Pose", AddPoseGraphNode::new);
         nodeTypes.put("State Machine", StateGraphNode::new);
         nodeTypes.put("Symmetry Constraint", SymmetryConstraintGraphNode::new);
+        nodeTypes.put("IK Constraint", IKConstraintGraphNode::new);
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();
@@ -801,6 +801,132 @@ public class GraphEditor extends Editor {
             json.put("target", target.getSelected());
             json.put("center", center.getSelected());
             json.put("projected", projected.getSelected());
+            return json;
+        }
+    }
+
+    public class IKConstraintGraphNode extends GraphNode{
+        private SelectBox<UUID> start;
+        private SelectBox<UUID> end;
+        private SelectBox<UUID> target;
+        public IKConstraintGraphNode() {
+            super("IK Constraint", "IK constraint.", true);
+            addInput("Input");
+            this.start = new SelectBox<>(ISpriteMain.getSkin()){
+                @Override
+                public String toString(UUID object) {
+                    return ISpriteMain.getInstance().sprite.bones.get(object).name;
+                }
+            };
+            this.start.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent changeEvent, Actor actor) {
+                    ArrayList<UUID> items = new ArrayList<>();
+                    if(start.getSelected() != null){
+                        ISpriteMain.getInstance().sprite.bones.get(start.getSelected()).childrenRecursive(items);
+                    }
+                    end.setItems(items.toArray(UUID[]::new));
+                }
+            });
+            this.end = new SelectBox<>(ISpriteMain.getSkin()){
+                @Override
+                public String toString(UUID object) {
+                    return ISpriteMain.getInstance().sprite.bones.get(object).name;
+                }
+            };
+            this.target = new SelectBox<>(ISpriteMain.getSkin()){
+                @Override
+                public String toString(UUID object) {
+                    return ISpriteMain.getInstance().sprite.bones.get(object).name;
+                }
+            };
+            HorizontalGroup startGroup = new HorizontalGroup();
+            startGroup.addActor(new Label("start: ", ISpriteMain.getSkin()));
+            startGroup.addActor(start);
+            verticalGroup.addActor(startGroup);
+
+            HorizontalGroup endGroup = new HorizontalGroup();
+            endGroup.addActor(new Label("end: ", ISpriteMain.getSkin()));
+            endGroup.addActor(end);
+            verticalGroup.addActor(endGroup);
+
+            HorizontalGroup targetGroup = new HorizontalGroup();
+            targetGroup.addActor(new Label("target: ", ISpriteMain.getSkin()));
+            targetGroup.addActor(target);
+            verticalGroup.addActor(targetGroup);
+            refresh();
+        }
+
+        @Override
+        public void refresh() {
+            UUID[] items = ISpriteMain.getInstance().sprite.bones.keySet().toArray(UUID[]::new);
+            this.start.setItems(items);
+            this.start.fire(new ChangeListener.ChangeEvent());
+            this.target.setItems(items);
+        }
+
+        @Override
+        public String getTypeName() {
+            return "IK Constraint";
+        }
+
+        @Override
+        public AnimatedSpritePose getOutputPose() {
+            AnimatedSpritePose pose = getInput("Input");
+            UUID start = this.start.getSelected();
+            UUID end = this.end.getSelected();
+            UUID target = this.target.getSelected();
+            if(start == null || end == null || target == null || start == end || end == target || target == start)
+                return pose;
+
+            ArrayList<UUID> boneChain = new ArrayList<>();
+            boneChain.add(end);
+            for(UUID current = end;!start.equals(end);){
+                UUID parent = ISpriteMain.getInstance().sprite.bones.get(current).parent;
+                current = parent;
+                boneChain.add(parent);
+            }
+            Collections.reverse(boneChain);
+
+            HashMap<UUID, Transform> transforms = pose.getBoneTransforms(ISpriteMain.getInstance().sprite, new Transform().lock());
+
+            float constraint = 90;
+            FabrikChain2D chain = new FabrikChain2D();
+            Vector2 firstBone = transforms.get(boneChain.get(0)).translation;
+            Vector2 secondBone = transforms.get(boneChain.get(1)).translation;
+            Vec2f prevPos = new Vec2f(secondBone.x, secondBone.y);
+            FabrikBone2D bone = new FabrikBone2D(new Vec2f(firstBone.x, firstBone.y), prevPos);
+            chain.addBone(bone);
+            for(int i = 2;i < boneChain.size();i++){
+                Vector2 position = transforms.get(boneChain.get(i)).translation;
+                Vec2f newPosition = new Vec2f(position.x, position.y);
+                Vec2f direction = newPosition.minus(prevPos);
+                chain.addConsecutiveConstrainedBone(direction, direction.length(), constraint, constraint);
+            }
+            Vector2 targetPos = transforms.get(target).translation;
+            chain.solveForTarget(new Vec2f(targetPos.x, targetPos.y));
+
+            for(int i = 0;i < chain.getNumBones();i++){
+                //chain.getBone(i).getDirectionUV(Vec2f.)
+            }
+
+            return pose;
+        }
+
+        @Override
+        public void load(JSONObject json) {
+            super.load(json);
+            this.target.setSelected(UUID.fromString(json.getString("target")));
+            this.end.setSelected(UUID.fromString(json.getString("end")));
+            this.start.setSelected(UUID.fromString(json.getString("start")));
+        }
+
+        @Override
+        public JSONObject save() {
+            JSONObject json = super.save();
+            json.put("target", target.getSelected());
+            json.put("end", end.getSelected());
+            json.put("start", start.getSelected());
             return json;
         }
     }

@@ -27,6 +27,12 @@ public class AnimatedSpriteBone {
         Random random = new Random();
         this.color = new Color(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1f);
     }
+    public void childrenRecursive(ArrayList<UUID> children){
+        for(UUID child : this.children){
+            children.add(child);
+            ISpriteMain.getInstance().sprite.bones.get(child).childrenRecursive(children);
+        }
+    }
     public JSONObject save(){
         JSONObject json = new JSONObject();
         if(parent != null)
