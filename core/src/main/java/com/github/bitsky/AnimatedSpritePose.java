@@ -4,10 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
 public class AnimatedSpritePose {
@@ -16,16 +13,42 @@ public class AnimatedSpritePose {
         this.boneTransforms = boneTransforms;
     }
     public AnimatedSpritePose add(AnimatedSpritePose other){
+        HashSet<UUID> transforms = new HashSet<>();
+        transforms.addAll(boneTransforms.keySet());
+        transforms.addAll(other.boneTransforms.keySet());
         HashMap<UUID, Transform> newTransforms = new HashMap<>();
-        for(Map.Entry<UUID, Transform> entry : boneTransforms.entrySet()){
-            newTransforms.put(entry.getKey(), entry.getValue().add(other.boneTransforms.get(entry.getKey())));
+        for(UUID id : transforms){
+            Transform first = this.boneTransforms.get(id);
+            Transform second = other.boneTransforms.get(id);
+            Transform result;
+            if(first != null && second != null){
+                result = first.add(second);
+            } else if(first != null){
+                result = first;
+            } else {
+                result = second;
+            }
+            newTransforms.put(id, result);
         }
         return new AnimatedSpritePose(newTransforms);
     }
     public AnimatedSpritePose lerp(AnimatedSpritePose other, float v){
+        HashSet<UUID> transforms = new HashSet<>();
+        transforms.addAll(boneTransforms.keySet());
+        transforms.addAll(other.boneTransforms.keySet());
         HashMap<UUID, Transform> newTransforms = new HashMap<>();
-        for(Map.Entry<UUID, Transform> entry : boneTransforms.entrySet()){
-            newTransforms.put(entry.getKey(), entry.getValue().lerp(other.boneTransforms.get(entry.getKey()), v));
+        for(UUID id : transforms){
+            Transform first = this.boneTransforms.get(id);
+            Transform second = other.boneTransforms.get(id);
+            Transform result;
+            if(first != null && second != null){
+                result = first.lerp(second, v);
+            } else if(first != null){
+                result = first;
+            } else {
+                result = second;
+            }
+            newTransforms.put(id, result);
         }
         return new AnimatedSpritePose(newTransforms);
     }
