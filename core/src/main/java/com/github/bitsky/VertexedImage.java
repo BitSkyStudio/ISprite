@@ -27,11 +27,11 @@ public class VertexedImage {
     public ArrayList<Vertex> points;
     public Transform transform;
     public String name;
-    public VertexedImage(Texture texture) {
+    public VertexedImage(Texture texture, String name) {
         this.texture = texture;
         this.points = new ArrayList<>();
         this.transform = new Transform().lock();
-        this.name = "image";
+        this.name = name;
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();

@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -49,7 +50,50 @@ public class BoneEditor extends Editor {
                 return object.name;
             }
         };
+        this.imageList.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if(this.getTapCount() == 2 && imageList.getSelected() != null){
+                    TextField input = new TextField(imageList.getSelected().name, ISpriteMain.getSkin());
+                    Dialog dialog = new Dialog("Enter new name", ISpriteMain.getSkin(), "dialog") {
+                        public void result(Object obj) {
+                            if (obj instanceof String) {
+                                imageList.getSelected().name = input.getText();
+                                refreshImages();
+                            }
+                        }
+                    };
+                    dialog.setMovable(false);
+                    dialog.button("Cancel");
+                    dialog.button("Ok", "");
+                    dialog.getContentTable().add(input);
+                    dialog.show(stage);
+                }
+            }
+        });
         boneHierarchyTable.add(imageList).row();
+        TextButton shiftUpImageButton = new TextButton("Shift Image Up", ISpriteMain.getSkin());
+        shiftUpImageButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if(imageList.getSelected() != null){
+                    Collections.swap(sprite.images, imageList.getSelectedIndex(), imageList.getSelectedIndex()==0?imageList.getItems().size-1:imageList.getSelectedIndex()-1);
+                    refreshImages();
+                }
+            }
+        });
+        boneHierarchyTable.add(shiftUpImageButton).row();
+        TextButton shiftDownImageButton = new TextButton("Shift Image Down", ISpriteMain.getSkin());
+        shiftDownImageButton.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if(imageList.getSelected() != null){
+                    Collections.swap(sprite.images, imageList.getSelectedIndex(), imageList.getSelectedIndex()==imageList.getItems().size-1?0:imageList.getSelectedIndex()+1);
+                    refreshImages();
+                }
+            }
+        });
+        boneHierarchyTable.add(shiftDownImageButton).row();
         TextButton removeImageButton = new TextButton("Remove Image", ISpriteMain.getSkin());
         removeImageButton.addListener(new ClickListener(){
             @Override
@@ -84,7 +128,7 @@ public class BoneEditor extends Editor {
                 @Override
                 public void onFilesChosen(Array<FileHandle> files) {
                     for(FileHandle fileHandle : files) {
-                        sprite.images.add(new VertexedImage(new Texture(fileHandle)));
+                        sprite.images.add(new VertexedImage(new Texture(fileHandle), fileHandle.name()));
                         refreshImages();
                         imageList.setSelectedIndex(imageList.getItems().size - 1);
                     }
@@ -152,7 +196,6 @@ public class BoneEditor extends Editor {
     }
     @Override
     public void render() {
-        super.render();
         AnimatedSprite sprite = ISpriteMain.getInstance().sprite;
 
         VertexedImage selectedImage = imageList.getSelected();
@@ -175,7 +218,7 @@ public class BoneEditor extends Editor {
                 moused = entry.getKey();
             }
         }
-
+        shapeRenderer.setAutoShapeType(true);
         shapeRenderer.begin();
         UUID finalMoused = moused;
         EMPTY_POSE.drawDebugBones(sprite, shapeRenderer, uuid -> uuid.equals(finalMoused)? Color.RED:(tree.getSelection().contains(boneNodes.get(uuid))?Color.BLUE:Color.GREEN));
@@ -229,8 +272,26 @@ public class BoneEditor extends Editor {
         }
         if(moused != null){
             if(Gdx.input.isKeyJustPressed(Input.Keys.D)){
-                sprite.removeNode(sprite.bones.get(moused));
-                boneNodes.remove(moused).remove();
+                AnimatedSpriteBone mousedBone = sprite.bones.get(moused);
+                if(mousedBone.children.isEmpty()) {
+                    boolean used = false;
+                    for(VertexedImage image : sprite.images){
+                        for(VertexedImage.Vertex vertex : image.points){
+                            for(UUID id : vertex.weights.keySet()){
+                                if(id.equals(mousedBone.id)){
+                                    used = true;
+                                    break;
+                                }
+                            }
+                            if(used)
+                                break;
+                        }
+                    }
+                    if(!used) {
+                        sprite.removeNode(sprite.bones.get(moused));
+                        boneNodes.remove(moused).remove();
+                    }
+                }
             }
             if(Gdx.input.isKeyJustPressed(Input.Keys.C)){
                 BoneNode node = boneNodes.get(moused);
@@ -240,6 +301,7 @@ public class BoneEditor extends Editor {
                 boneNodes.put(movingId, newNode);
             }
         }
+        super.render();
     }
 
     @Override

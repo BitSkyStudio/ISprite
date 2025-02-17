@@ -21,7 +21,6 @@ public class AnimatedSprite {
         this.rootBone.name = "root";
         this.bones.put(this.rootBone.id, this.rootBone);
         this.images = new ArrayList<>();
-        this.images.add(new VertexedImage(new Texture("libgdx.png")));
     }
     public JSONObject save(){
         JSONObject json = new JSONObject();
@@ -50,7 +49,7 @@ public class AnimatedSprite {
         this.rootBone = this.bones.get(UUID.fromString(json.getString("root")));
         this.images.clear();
         for(Object im : json.getJSONArray("images")){
-            VertexedImage image = new VertexedImage(null);
+            VertexedImage image = new VertexedImage(null, null);
             image.load((JSONObject) im);
             this.images.add(image);
         }
