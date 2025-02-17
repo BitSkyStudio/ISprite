@@ -188,7 +188,6 @@ public class GraphEditor extends Editor {
     public void setPlaying(boolean playing) {
         this.playing = playing;
         this.playButton.setText(playing?"Pause":"Play");
-        this.finalPoseGraphNode.reset();
     }
 
     public void removeNode(GraphNode node) {
@@ -809,6 +808,8 @@ public class GraphEditor extends Editor {
         private SelectBox<UUID> start;
         private SelectBox<UUID> end;
         private SelectBox<UUID> target;
+        private boolean isClockwise;
+        private CheckBox isClockwiseCheckbox;
         public IKConstraintGraphNode() {
             super("IK Constraint", "IK constraint.", true);
             addInput("Input");
@@ -840,6 +841,15 @@ public class GraphEditor extends Editor {
                     return ISpriteMain.getInstance().sprite.bones.get(object).name;
                 }
             };
+            this.isClockwiseCheckbox = new CheckBox("clockwise", ISpriteMain.getSkin());
+            isClockwiseCheckbox.setChecked(isClockwise);
+            isClockwiseCheckbox.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent changeEvent, Actor actor) {
+                    isClockwise = isClockwiseCheckbox.isChecked();
+                }
+            });
+            verticalGroup.addActor(isClockwiseCheckbox);
             HorizontalGroup startGroup = new HorizontalGroup();
             startGroup.addActor(new Label("start: ", ISpriteMain.getSkin()));
             startGroup.addActor(start);
@@ -881,7 +891,7 @@ public class GraphEditor extends Editor {
 
             ArrayList<UUID> boneChain = new ArrayList<>();
             boneChain.add(end);
-            for(UUID current = end;!start.equals(end);){
+            for(UUID current = end;!start.equals(current);){
                 UUID parent = ISpriteMain.getInstance().sprite.bones.get(current).parent;
                 current = parent;
                 boneChain.add(parent);
@@ -901,13 +911,21 @@ public class GraphEditor extends Editor {
                 Vector2 position = transforms.get(boneChain.get(i)).translation;
                 Vec2f newPosition = new Vec2f(position.x, position.y);
                 Vec2f direction = newPosition.minus(prevPos);
-                chain.addConsecutiveConstrainedBone(direction, direction.length(), constraint, constraint);
+                chain.addConsecutiveConstrainedBone(direction, direction.length(), isClockwise?constraint:0, isClockwise?0:constraint);
+                prevPos = newPosition;
             }
             Vector2 targetPos = transforms.get(target).translation;
+            chain.setMaxIterationAttempts(20);
             chain.solveForTarget(new Vec2f(targetPos.x, targetPos.y));
 
+            float prevRot = transforms.get(start).rotation;
+            Vec2f prevDir = new Vec2f((float) -Math.sin(prevRot), (float) -Math.cos(prevRot));
             for(int i = 0;i < chain.getNumBones();i++){
-                //chain.getBone(i).getDirectionUV(Vec2f.)
+                Vec2f newDirection = chain.getBone(i).getDirectionUV();
+                float angle = prevDir.getSignedAngleDegsTo(newDirection);
+                Transform t = pose.boneTransforms.computeIfAbsent(boneChain.get(i), k -> new Transform());
+                t.rotation = (float) Math.toRadians(angle);
+                prevDir = newDirection;
             }
 
             return pose;
@@ -919,6 +937,8 @@ public class GraphEditor extends Editor {
             this.target.setSelected(UUID.fromString(json.getString("target")));
             this.end.setSelected(UUID.fromString(json.getString("end")));
             this.start.setSelected(UUID.fromString(json.getString("start")));
+            this.isClockwise = json.getBoolean("clockwise");
+            this.isClockwiseCheckbox.setChecked(isClockwise);
         }
 
         @Override
@@ -927,6 +947,7 @@ public class GraphEditor extends Editor {
             json.put("target", target.getSelected());
             json.put("end", end.getSelected());
             json.put("start", start.getSelected());
+            json.put("clockwise", isClockwise);
             return json;
         }
     }
