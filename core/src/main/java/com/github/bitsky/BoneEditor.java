@@ -12,9 +12,11 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Array;
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration;
 import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent;
+import games.spooky.gdx.nativefilechooser.NativeFilesChooserCallback;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -63,27 +65,31 @@ public class BoneEditor extends Editor {
         addImageButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-                conf.mimeFilter = "image/png";
-                conf.intent = NativeFileChooserIntent.OPEN;
-                conf.title = "Import image";
-                conf.directory = new FileHandle(".");
-                ISpriteMain.getInstance().fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
-                    @Override
-                    public void onFileChosen(FileHandle fileHandle) {
+            NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+            conf.mimeFilter = "image/png";
+            conf.intent = NativeFileChooserIntent.OPEN;
+            conf.title = "Import image";
+            conf.directory = new FileHandle(".");
+            ISpriteMain.getInstance().fileChooser.chooseFiles(conf, new NativeFilesChooserCallback() {
+                @Override
+                public void onCancellation() {
+
+                }
+
+                @Override
+                public void onError(Exception e) {
+
+                }
+
+                @Override
+                public void onFilesChosen(Array<FileHandle> files) {
+                    for(FileHandle fileHandle : files) {
                         sprite.images.add(new VertexedImage(new Texture(fileHandle)));
                         refreshImages();
-                        imageList.setSelectedIndex(imageList.getItems().size-1);
+                        imageList.setSelectedIndex(imageList.getItems().size - 1);
                     }
-                    @Override
-                    public void onCancellation() {
-
-                    }
-                    @Override
-                    public void onError(Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+                }
+            });
             }
         });
         boneHierarchyTable.add(addImageButton);

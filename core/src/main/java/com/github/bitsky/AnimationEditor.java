@@ -135,7 +135,9 @@ public class AnimationEditor extends Editor {
             AnimatedSpriteBone movingBone = sprite.bones.get(movingId);
             if(movingBone != null && movingBone.parent != null) {
                 AnimationTrack track = animation.getTrack(movingId);
-                track.rotations.addKeyframe(time, animation.getPose(time).getBoneTransforms(sprite, new Transform().lock()).get(movingId).rotation-v1/10f, EInterpolationFunction.Linear);
+                HashMap<UUID, Transform> transforms = animation.getPose(time).getBoneTransforms(sprite, new Transform().lock());
+                Transform parentTransform = transforms.get(movingBone.parent);
+                track.rotations.addKeyframe(time, transforms.get(movingId).rotation- parentTransform.rotation-v1/10f, EInterpolationFunction.Linear);
                 playing = false;
             }
             return true;
