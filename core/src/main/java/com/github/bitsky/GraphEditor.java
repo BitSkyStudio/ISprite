@@ -25,10 +25,13 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
+import net.objecthunter.exp4j.Expression;
+import net.objecthunter.exp4j.ExpressionBuilder;
 import org.json.JSONObject;
 
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class GraphEditor extends Editor {
     private final Texture linkInputTexture;
@@ -217,8 +220,12 @@ public class GraphEditor extends Editor {
         for(InputProperty property : properties.values()){
             Label name = new Label(property.name, ISpriteMain.getSkin());
             TextField valueField = new TextField(String.valueOf(property.value), ISpriteMain.getSkin());
-            valueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
+            valueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".") || c=='\n'));
             valueField.setTextFieldListener((textField1, c) -> {
+                if(c == '\n'){
+                    stage.setKeyboardFocus(null);
+                    return;
+                }
                 try {
                     property.value = Float.parseFloat(textField1.getText());
                 } catch(NumberFormatException e){
@@ -617,25 +624,15 @@ public class GraphEditor extends Editor {
     }
 
     public class BlendPoseGraphNode extends GraphNode{
-        public float blendValue;
         private TextField blendValueField;
         public BlendPoseGraphNode() {
             super("Blend Pose", "Blends two inputs.", true);
             addInput("Pose1");
             addInput("Pose2");
 
-            this.blendValue = 0.5f;
             this.window.add(new Label("Blend: ", ISpriteMain.getSkin()));
 
-            this.blendValueField = new TextField(String.valueOf(blendValue), ISpriteMain.getSkin());
-            blendValueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
-            blendValueField.setTextFieldListener((textField1, c) -> {
-                try {
-                    blendValue = Float.parseFloat(textField1.getText());
-                } catch(NumberFormatException e){
-                    blendValueField.setText(String.valueOf(blendValue));
-                }
-            });
+            this.blendValueField = new TextField(String.valueOf(0.5), ISpriteMain.getSkin());
             this.window.add(blendValueField);
         }
 
@@ -646,40 +643,29 @@ public class GraphEditor extends Editor {
 
         @Override
         public AnimatedSpritePose getOutputPose() {
-            return getInput("Pose1").lerp(getInput("Pose2"), blendValue);
+            return getInput("Pose1").lerp(getInput("Pose2"), evaluateExpression(blendValueField.getText()));
         }
 
         @Override
         public JSONObject save() {
             JSONObject json = super.save();
-            json.put("blendValue", blendValue);
+            json.put("blendValue", blendValueField.getText());
             return json;
         }
         @Override
         public void load(JSONObject json) {
             super.load(json);
-            this.blendValue = json.getFloat("blendValue");
-            blendValueField.setText(String.valueOf(blendValue));
+            this.blendValueField.setText(json.getString("blendValue"));
         }
     }
 
     public class MultiplyPoseGraphNode extends GraphNode{
-        public float multiplyValue;
         private TextField multiplyValueField;
         public MultiplyPoseGraphNode() {
             super("Multiply Pose", "Multiplies pose by set value.", true);
             addInput("Pose");
-            this.multiplyValue = 1f;
             this.window.add(new Label("Multiply: ", ISpriteMain.getSkin()));
-            this.multiplyValueField = new TextField(""+multiplyValue, ISpriteMain.getSkin());
-            multiplyValueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
-            multiplyValueField.setTextFieldListener((textField1, c) -> {
-                try {
-                    multiplyValue = Float.parseFloat(textField1.getText());
-                } catch(NumberFormatException e){
-                    multiplyValueField.setText(""+multiplyValue);
-                }
-            });
+            this.multiplyValueField = new TextField("1", ISpriteMain.getSkin());
             this.window.add(multiplyValueField);
         }
 
@@ -690,19 +676,18 @@ public class GraphEditor extends Editor {
 
         @Override
         public AnimatedSpritePose getOutputPose() {
-            return getInput("Pose").multiply(multiplyValue);
+            return getInput("Pose").multiply(evaluateExpression(multiplyValueField.getText()));
         }
         @Override
         public JSONObject save() {
             JSONObject json = super.save();
-            json.put("multiplyValue", multiplyValue);
+            json.put("multiplyValue", multiplyValueField.getText());
             return json;
         }
         @Override
         public void load(JSONObject json) {
             super.load(json);
-            this.multiplyValue = json.getFloat("multiplyValue");
-            multiplyValueField.setText(String.valueOf(multiplyValue));
+            this.multiplyValueField.setText(json.getString("multiplyValue"));
         }
     }
 
@@ -968,30 +953,20 @@ public class GraphEditor extends Editor {
     }
 
     public class PlaybackSpeedGraphNode extends GraphNode{
-        public float speed;
         private TextField speedField;
         public PlaybackSpeedGraphNode() {
             super("Playback Speed", "Changes playback speed.", true);
             addInput("Pose");
 
-            this.speed = 1;
             this.window.add(new Label("Speed: ", ISpriteMain.getSkin()));
 
-            this.speedField = new TextField(String.valueOf(speed), ISpriteMain.getSkin());
-            speedField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".")));
-            speedField.setTextFieldListener((textField1, c) -> {
-                try {
-                    speed = Float.parseFloat(textField1.getText());
-                } catch(NumberFormatException e){
-                    speedField.setText(String.valueOf(speed));
-                }
-            });
+            this.speedField = new TextField("1", ISpriteMain.getSkin());
             this.window.add(speedField);
         }
 
         @Override
         public void tick(float step) {
-            nodes.get(inputs.get("Pose")).tick(step*speed);
+            nodes.get(inputs.get("Pose")).tick(step*evaluateExpression(speedField.getText()));
         }
 
         @Override
@@ -1007,14 +982,13 @@ public class GraphEditor extends Editor {
         @Override
         public JSONObject save() {
             JSONObject json = super.save();
-            json.put("speed", speed);
+            json.put("speed", speedField.getText());
             return json;
         }
         @Override
         public void load(JSONObject json) {
             super.load(json);
-            this.speed = json.getFloat("speed");
-            speedField.setText(String.valueOf(speed));
+            this.speedField.setText(json.getString("speed"));
         }
     }
 
@@ -1248,6 +1222,19 @@ public class GraphEditor extends Editor {
         public boolean remove() {
             polygonSpriteBatch.dispose();
             return super.remove();
+        }
+    }
+    public float evaluateExpression(String expression){
+        try {
+            ExpressionBuilder builder = new ExpressionBuilder(expression);
+            builder.variables(properties.values().stream().map(p -> p.name).toArray(String[]::new));
+            Expression e = builder.build();
+            for (InputProperty prop : properties.values()) {
+                e.setVariable(prop.name, prop.value);
+            }
+            return (float) e.evaluate();
+        } catch (Exception e){
+            return 0;
         }
     }
 }

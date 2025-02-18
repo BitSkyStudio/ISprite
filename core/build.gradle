@@ -6,4 +6,5 @@ dependencies {
   implementation 'org.json:json:20240303'
   implementation "games.spooky.gdx:gdx-nativefilechooser:2.4.0"
   implementation 'com.github.FedUni:caliko:v1.3.3'
+  implementation 'net.objecthunter:exp4j:0.4.8'
 }
