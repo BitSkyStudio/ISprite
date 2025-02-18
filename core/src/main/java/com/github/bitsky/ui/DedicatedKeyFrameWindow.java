@@ -180,6 +180,7 @@ public class DedicatedKeyFrameWindow extends Window {
                 lastSelectedMarker = null;
                 this.markers.forEach(marker -> {
                     if (marker.mouseColliding()) {
+                        animationEditor.time = marker.time;
                         this.mouseDragMarker = marker;
                         lastSelectedMarker = marker;
                         animationEditor.functionSelectBox.setSelected(this.propertyTrack.getTrack().get(marker.time).interpolationFunction);
@@ -217,7 +218,9 @@ public class DedicatedKeyFrameWindow extends Window {
             y = this.getParent().getY() + getY();
 
             if (this.mouseDragMarker != null) {
-                this.mouseDragMarker.changeTime((Gdx.input.getX() - x) / TIME_SUB_DIVISION);
+
+                if (Gdx.input.getDeltaX() + Gdx.input.getDeltaY() != 0)
+                    this.mouseDragMarker.changeTime((Gdx.input.getX() - x) / TIME_SUB_DIVISION);
 
                 if(Gdx.input.isKeyJustPressed(Input.Keys.FORWARD_DEL)){
                     this.mouseDragMarker.keyframeRow.propertyTrack.track.remove(this.mouseDragMarker.time);
