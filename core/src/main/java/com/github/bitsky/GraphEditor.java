@@ -53,6 +53,8 @@ public class GraphEditor extends Editor {
 
     private Table propertiesTable;
 
+    private UUID outputShowNode;
+
     public GraphEditor() {
         this.linkInputTexture = new Texture("link_input.png");
         this.linkInputFilledTexture = new Texture("link_input_filled.png");
@@ -269,7 +271,10 @@ public class GraphEditor extends Editor {
             if(finalPoseGraphNode.isFinished())
                 setPlaying(false);
         }
-        this.animationPlayer.pose = finalPoseGraphNode.getInput("Out");
+        if(this.outputShowNode == null || !nodes.containsKey(this.outputShowNode)){
+            this.outputShowNode = finalPoseGraphNode.id;
+        }
+        this.animationPlayer.pose = nodes.get(outputShowNode).getOutputPose();
         for(InputProperty property : properties.values()){
             if(property.resetValue != null) {
                 if(property.value != property.resetValue) {
@@ -358,6 +363,15 @@ public class GraphEditor extends Editor {
 
                 miniToolBar.addActor(removeButton);
             }
+            final TextButton showOutputButton = new TextButton("O", this.window.getSkin());
+            showOutputButton.addListener(new ClickListener(){
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    GraphEditor.this.outputShowNode = GraphNode.this.id;
+                }
+            });
+
+            miniToolBar.addActor(showOutputButton);
             miniToolBar.addActor(new Label(description, this.window.getSkin()));
             this.verticalGroup.addActor(miniToolBar);
             this.verticalGroup.columnLeft();
@@ -522,7 +536,7 @@ public class GraphEditor extends Editor {
 
         @Override
         public AnimatedSpritePose getOutputPose() {
-            throw new IllegalStateException();
+            return getInput("Out");
         }
         @Override
         public boolean hasOutput() {
