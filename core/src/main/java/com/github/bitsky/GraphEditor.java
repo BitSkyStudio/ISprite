@@ -220,15 +220,13 @@ public class GraphEditor extends Editor {
         for(InputProperty property : properties.values()){
             Label name = new Label(property.name, ISpriteMain.getSkin());
             TextField valueField = new TextField(String.valueOf(property.value), ISpriteMain.getSkin());
-            valueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || (c=='.' && !textField1.getText().contains(".") || c=='\n'));
+            valueField.setTextFieldFilter((textField1, c) -> Character.isDigit(c) || c=='.'|| c=='\n');
             valueField.setTextFieldListener((textField1, c) -> {
                 if(c == '\n'){
                     stage.setKeyboardFocus(null);
-                    return;
-                }
-                try {
-                    property.value = Float.parseFloat(textField1.getText());
-                } catch(NumberFormatException e){
+                    try {
+                        property.value = Float.parseFloat(textField1.getText());
+                    } catch(NumberFormatException e){}
                     valueField.setText(String.valueOf(property.value));
                 }
             });
